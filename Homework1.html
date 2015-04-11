@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- <title>MSAN 622 Information Visualization</title> -->
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+<style type="text/css">
+    body {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+</style>
+
+<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+<![endif]-->
+</head>
+
+<body>
+
+<!-- Fixed Navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MSN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#homework">Homework</a></li>
+                <li><a href="#project">Project</a></li>
+                <li><a href="#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Homework 1</h1>
+    </div>
+</div>
+</body>
+
+
+<style>
+  body {
+    font: 10px sans-serif;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    /*stroke: lightgrey;*/
+    opacity: 0.2;
+    shape-rendering: crispEdges;
+  }
+
+  .grid .tick {
+    stroke-dasharray: lightgrey;
+    opacity: 0.2;
+  }
+  .grid path {
+      stroke-width: 0;
+  }
+
+  .bar {
+    fill: steelblue;
+  }
+
+  .bar:hover {
+    fill: purple;
+  }
+
+  .x.axis path {
+    display: none;
+  }
+
+  .d3-tip {
+    line-height: 1;
+    font-weight: bold;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 2px;
+  }
+
+  /* Creates a small triangle extender for the tooltip */
+  .d3-tip:after {
+    box-sizing: border-box;
+    display: inline;
+    font-size: 10px;
+    width: 100%;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.8);
+    content: "\25BC";
+    position: absolute;
+    text-align: center;
+  }
+
+  /* Style northward tooltips differently */
+  .d3-tip.n:after {
+    margin: -1px 0 0 0;
+    top: 100%;
+    left: 0;
+  }
+
+</style>
+
+<body>
+  <form>
+    <div>
+      <label><input type='checkbox' id='sortedBox'> Sort by values </label>
+    </div>
+  </form>
+  
+  <!-- <button type="button" onclick="alert('Hello world!')">Whaaaaat!</button> -->
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+
+  <script>
+
+    function make_x_axis() {        
+    return d3.svg.axis()
+        .scale(x)
+         .orient("bottom")
+         .ticks(5)
+    }
+
+    function make_y_axis() {        
+        return d3.svg.axis()
+            .scale(y)
+            .orient("left")
+            .ticks(5)
+    }
+
+    function remove_nonalpha(string){
+    return string.replace(/[^\a-z]|_/g, "");
+    }
+
+    function return_object(string){
+      var Counter = Object(); 
+      for (var i = 0; i < string.length; i++) {
+          if (string[i] in Counter) {
+            Counter[string[i]] += 1;
+          }
+        else {
+          Counter[string[i]] = 1;
+        }
+      };
+      return Counter;
+    }
+
+    function sortObjectByKey(obj){
+      var keys = [];
+      var sorted_obj = Object();
+      for(var key in obj){
+          if(obj.hasOwnProperty(key)){
+              keys.push(key);
+          }
+      }
+      // sort keys
+      keys.sort();
+      // create new array based on Sorted Keys
+      for(var i = 0; i < keys.length; i++){
+          sorted_obj[keys[i]] = obj[keys[i]];
+      };
+      return sorted_obj;
+    }
+
+
+    function type(d) {
+      d.value = +d.value;
+      return d;
+    }
+
+    function retrieve_text() {
+      // console.log(document.getElementById('inputtext').value)
+      return document.getElementById('inputtext').value;
+    }
+
+    var String = decodeURI(window.location.search).toLowerCase();
+    var Res = remove_nonalpha(String);
+    var Counter = sortObjectByKey(return_object(Res));
+
+    var tableau = d3.entries(Counter);
+    var valeurs = d3.values(Counter); 
+
+    
+    // var String2 = d3.select('#button1').attr("onclick");
+    // console.log(String2);
+
+    var margin = {top: 30, right: 30, bottom: 30, left: 30},
+    width = 600 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
+
+    var formatCount = d3.format(".0");
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .ticks(valeurs.length)
+        // .tickSize(-height, 0, 0)
+        .tickPadding(5)
+        // .tickFormat("")
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        // change tick size to fit the maximum, no need for decimal points ticks...
+        .ticks(d3.max(valeurs))
+        .tickSize(-width, 0, 0)
+        .tickFormat(formatCount);
+
+    var tip = d3.tip()
+      .attr('class', 'd3-tip')
+      .offset([-10, 0])
+      .html(function(d) {
+        return "<strong>Count:</strong> <span style='color:red'>" + d.value + "</span>";
+      })
+
+
+    var svg = d3.select("body")
+        .append("svg")
+          .attr("width", width + margin.left + margin.right)
+          .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+      svg.call(tip);
+
+      x.domain(tableau.map(function(d) { return d.key; }));
+      y.domain([0, d3.max(tableau, function(d) { return d.value; })]);
+
+      svg.append("g")         // Add the X Axis
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis)
+          
+
+      // Add the text label for the x axis
+      svg.append("text")
+        .attr("transform", "translate(" + (width / 2) + " ," + (height + margin.bottom) + ")")
+        .style("text-anchor", "middle")
+        .text("Letter");
+
+      svg.append("g")         // Add the Y Axis
+        .attr("class", "y axis")
+        .call(yAxis)
+
+      // Add the text label for the y axis
+      svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x",0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Count");
+
+      svg.selectAll(".bar")
+        .data(tableau)
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", function(d) { return x(d.key); })
+        .attr("width", x.rangeBand())
+        .attr("y", height)
+        .attr("height", 0)
+        .transition()
+        .delay(function (d, i) { return i*300; })
+        .attr("height", function (d, i) { return height-y(d.value); })
+        .attr("y", function (d) { return y(d.value); })
+        // add a transition to print the bar
+       // change the opacity based on the values, the higher the ratio, the higher the opacity
+        .style("opacity", function(d) { return 0.9 * (d.value / d3.max(tableau, function(d) { return d.value; }));});
+
+       svg.selectAll(".bar") 
+        .on('mouseover', tip.show)
+        .on('mouseout', tip.hide);
+
+
+      d3.select("#sortedBox").on("change", change);
+
+      function change() {
+
+        // Copy-on-write since tweens are evaluated after a delay.
+        var x0 = x.domain(tableau.sort(this.checked
+            ? function(a, b) { return b.value - a.value; }
+            : function(a, b) { return d3.ascending(a.key, b.key); })
+            .map(function(d) { return d.key; }))
+            .copy();
+
+        svg.selectAll(".bar")
+            .sort(function(a, b) { return x0(a.key) - x0(b.key); });
+
+        var transition = svg.transition().duration(750),
+            delay = function(d, i) { return i * 50; };
+
+        transition.selectAll(".bar")
+            .delay(delay)
+            .attr("x", function(d) { return x0(d.key); });
+
+        transition.select(".x.axis")
+            .call(xAxis)
+            .selectAll("g")
+            .delay(delay);
+      }
+
+
+  </script>
+
+<div class="container">
+<h1>Functionality</h1>
+
+  <p style ="font-size:18px"> C level functionality </p>
+  <ul>
+    <li> Modified the tick label formatting: only integers (no decimals). </li>
+    <li> Modified the axis labels</li>
+    <li> Modify the underlying grid and axis lines: added horizontal grid lines. </li>
+    <li> Modify the bar color: the opacity is function of the count. </li>
+  </ul>
+  <p style ="font-size:18px"> B level functionality </p>
+  <ul>
+    <li> Add a button that allows you to change between sorting alphabetically and sorting by value. </li>
+    <li> Add a tooltip that shows the exact value of a bar when hovering over it. </li>
+  </ul>
+  <p style ="font-size:18px"> A level functionality </p>
+  <ul>
+    <li> At the start of your visualization, show one bar at a time. </li>
+  </ul>
+
+<h1>Discussion</h1>
+
+  <p> I modified the tick labelling since we don't use decimals in that example (we use increment of 1) </p>
+  <p> I added an horizontal gridline only (not vertical line) since I also added a tooltip. It was part of the assignment so I decided to show it but I would rather use no gridline in that example.</p>
+  <p> I added a tooltip that give the exact count when hovering over a bar, the color of the bar also change from blue to purple. </p>
+  <p> Next steps will be to add a textbox instead of retrieving input from the URI.</p>
+</div>
+
+</body>
+</html>
+
