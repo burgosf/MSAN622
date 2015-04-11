@@ -1,0 +1,177 @@
+
+
+<!DOCTYPE html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <style>
+    body {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .bar {
+      fill: steelblue;
+    }
+
+    .bar:hover {
+      fill: steelblue;
+    }
+
+    .x.axis path {
+      display: none;
+    }
+
+    .d3-tip {
+      line-height: 1;
+      font-weight: bold;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      border-radius: 2px;
+    }
+
+    /* Creates a small triangle extender for the tooltip */
+    .d3-tip:after {
+      box-sizing: border-box;
+      display: inline;
+      font-size: 10px;
+      width: 100%;
+      line-height: 1;
+      color: rgba(0, 0, 0, 0.8);
+      content: "\25BC";
+      position: absolute;
+      text-align: center;
+    }
+
+    /* Style northward tooltips differently */
+    .d3-tip.n:after {
+      margin: -1px 0 0 0;
+      top: 100%;
+      left: 0;
+    }
+  </style>
+
+  
+
+</head>
+
+
+<body>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+
+  <svg class="svg"></svg>
+  <script>
+
+    var margin = {top: 30, right: 30, bottom: 30, left: 30},
+    width = 600 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
+
+    var formatCount = d3.format(".0");
+
+    var x = d3.scale.ordinal()
+        .rangeRoundBands([0, width], .1);
+
+    var y = d3.scale.linear()
+        .range([height, 0]);
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom");
+
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .tickFormat(formatCount);
+// change ticksize
+    var tip = d3.tip()
+      .attr('class', 'd3-tip')
+      .offset([-10, 0])
+      .html(function(d) {
+        return "<strong>Count:</strong> <span style='color:red'>" + d.value + "</span>";
+      })
+
+    function remove_nonalpha(string){
+    return string.replace(/[^\a-z]|_/g, "");
+    }
+
+    function return_object(string){
+      var Counter = Object(); 
+      for (var i = 0; i < string.length; i++) {
+          if (string[i] in Counter) {
+            Counter[string[i]] += 1;
+          }
+        else {
+          Counter[string[i]] = 1;
+        }
+      };
+      return Counter;
+    }
+
+    function type(d) {
+      d.value = +d.value;
+      return d;
+    }
+
+    var String = decodeURI(window.location.search).toLowerCase();
+    var Res = remove_nonalpha(String);
+    var Counter = return_object(Res);
+
+    var tableau = d3.entries(Counter);
+    var valeurs = d3.values(Counter); 
+
+    // document.write("myObject is " + JSON.stringify(Counter));
+
+
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    svg.call(tip);
+
+      x.domain(tableau.map(function(d) { return d.key; }));
+      y.domain([0, d3.max(tableau, function(d) { return d.value; })]);
+
+    svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+    svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Count");
+
+    svg.selectAll(".bar")
+      .data(tableau)
+      .enter().append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.key); })
+      .attr("width", x.rangeBand())
+      .attr("y", function(d) { return y(d.value); })
+      .attr("height", function(d) { return height - y(d.value); })
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+
+  </script>
+
+
+</body>
+</html>
