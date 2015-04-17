@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+
+<html>
+<meta charset="utf-8">
+<head>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.min.js"></script>
+  
+  <style type="text/css">
+  body {
+    font: 11px sans-serif;
+    margin: 10px;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .bar:hover {
+    fill: #bcbcbc ;
+  }
+
+  .x.axis path {
+    display: none;
+  }
+
+  .d3-tip {
+    line-height: 1;
+    font-weight: bold;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #efefef;
+    border-radius: 2px;
+  }
+
+  /* Creates a small triangle extender for the tooltip */
+  .d3-tip:after {
+    box-sizing: border-box;
+    display: inline;
+    font-size: 10px;
+    width: 100%;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.8);
+    content: "\25BC";
+    position: absolute;
+    text-align: center;
+  }
+
+  /* Style northward tooltips differently */
+  .d3-tip.n:after {
+    margin: -1px 0 0 0;
+    top: 100%;
+    left: 0;
+  }
+  </style>
+</head>
+
+<body>
+  <div id="vis"></div>
+<script>
+
+var margin = {top: 45, right: 100, bottom: 20, left: 20},
+    width = 450 - margin.left - margin.right,
+    height = 90 - margin.top - margin.bottom;
+
+var formatPercent = d3.format(".00");
+
+var color = d3.scale.linear()
+          .range(['rgb(239,243,255)','rgb(189,215,231)','rgb(107,174,214)','rgb(49,130,189)','rgb(8,81,156)'])
+          // .domain([0,0.2,0.4,0.6,0.8]);
+
+var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+// Scales. Note the inverted domain fo y-scale: bigger is up!
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(formatPercent);
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong>" + d.feature + "\t" + d.region + "</strong><br/><span style='color:#fff'>" + d.number + "</span>";
+  })
+
+// csv loaded asynchronously
+d3.csv("small_multiple.csv", type, function(data) {
+
+  // Data is nested by feature
+  var features = d3.nest()
+      .key(function(d) { return d.feature; })
+      .entries(data);
+
+  // Parse dates and numbers. We assume values are sorted by date.
+  // Also compute the maximum price per symbol, needed for the y-domain.
+  // features.forEach(function(s) {
+  //   s.values.forEach(function(d) { d.region = d.region; d.number = +d.number; });
+  //   // console.log(s.values);
+  //   s.maxValue = d3.max(s.values, function(d) { return d.number; });
+    // console.log(features);
+  // });
+
+  // Compute the minimum and maximum year and percent across symbols.
+  x.domain(data.map(function(d) { return d.region; }));
+  // y.domain([0, d3.max(features, function(s) { return s.values[0].number; })]);
+  // y.domain([0, d3.max(feature, function(s) { return s.maxValue; })]);
+  // y.domain([0, d3.maxValue]);
+
+  // Add an SVG element for each country, with the desired dimensions and margin.
+  var svg = d3.select("#vis").selectAll("svg")
+    .data(features)
+    .enter()
+    .append("svg:svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .each(multiple);
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      // Hide y axis
+      // .attr("class", "y axis")
+      // .call(yAxis)
+    .append("text")
+    .attr("x", width + 10)
+    .attr("y", height/3)
+    .attr("dy", ".71em")
+    .attr("text-anchor", "start")
+    .attr("font-size", "1.1em")
+    .text(function(d) { return d.key});
+
+  svg.call(tip);
+
+});
+
+function multiple(feature) {
+  console.log(feature);
+  var svg = d3.select(this);
+
+  y.domain([0, d3.max(feature.values, function(d) { return d.number; })]);
+
+  color.domain([0,0.2*d3.max(feature.values, function(d) { return d.number; }),0.4*d3.max(feature.values, function(d) { return d.number; }),0.6*d3.max(feature.values, function(d) { return d.number; }),0.8*d3.max(feature.values, function(d) { return d.number; })]);
+
+  svg.selectAll(".bar")
+      .data(feature.values)
+      .enter()
+      .append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x(d.region); })
+      .attr("width", x.rangeBand())
+      .attr("y", function(d) { return y(d.number); })
+      // .y.domain([0, function(d) { return d.maxValue;}])
+      // .attr("y", function(d) { y.domain([0, d.maxValue]); return y(d.number); })
+      // .attr("height", function(d) { y.domain([0, function(d) { return d.maxValue;}]); return height - y(d.number); })
+      .attr("height", function(d) { return height - y(d.number); })
+      .attr("fill", function(d) {return color(d.number)})
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+}
+
+function type(d) {
+  d.number = +d.number;
+  return d;
+}
+
+</script>
+</body>
+</html>

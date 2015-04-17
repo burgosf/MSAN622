@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.min.js"></script>
+
+<style>
+
+body {
+  font: 11px sans-serif;
+  margin: 10px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.dot {
+  fill-opacity: .8;
+  stroke: #000;
+}
+
+.tooltip1 {
+  position: absolute;
+  width: 200px;
+  height: 28px;
+  pointer-events: none;
+}
+
+.bar:hover {
+    fill: #bcbcbc ;
+}
+
+.tooltip2 {
+    line-height: 1;
+    font-weight: bold;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #efefef;
+    border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.tooltip2:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+  /* Style northward tooltips differently */
+.tooltip2.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+.background path {
+  fill: none;
+  stroke: #ccc;
+  stroke-opacity: .4;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  stroke: steelblue;
+  stroke-opacity: .7;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container" id="area1">
+<h1>Bubble Chart</h1>
+
+</div>
+
+<script>
+var margin1 = {top: 30, right: 30, bottom: 30, left: 30},
+    width1 = 600 - margin1.left - margin1.right,
+    height1 = 350 - margin1.top - margin1.bottom;
+
+// setup x 
+var x1 = function(d) { return d.income;}, // data -> value
+    x1Scale = d3.scale.linear().range([0, width1]), // value -> display
+    x1Map = function(d) { return x1Scale(x1(d));}, // data -> display
+    x1Axis = d3.svg.axis().scale(x1Scale).orient("bottom");
+
+// setup y
+var y1 = function(d) { return d.HSGrad;}, // data -> value
+    y1Scale = d3.scale.linear().range([height1, 0]), // value -> display
+    y1Map = function(d) { return y1Scale(y1(d));}, // data -> display
+    y1Axis = d3.svg.axis()
+      .scale(y1Scale)
+      .ticks(10)
+      .orient("left");
+
+var r1 = function(d) { return d.Illiteracy; },
+    r1Scale = d3.scale.sqrt().range([5, 25]),
+    r1Map = function(d) {return r1Scale(r1(d));};
+
+// setup fill color
+var c1 = function(d) { return d.region;},
+    color1 = d3.scale.category10();
+
+// add the graph canvas to the body of the webpage
+var svg1 = d3.select("#area1").append("svg")
+    .attr("width", width1 + margin1.left + margin1.right)
+    .attr("height", height1 + margin1.top + margin1.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin1.left + "," + margin1.top + ")");
+
+// add the tooltip area to the webpage
+var tooltip1 = d3.select("#area1").append("div")
+    .attr("class", "tooltip1")
+    .style("opacity", 0);
+
+// load data
+d3.csv("statex77.csv", function(error, data) {
+
+  // change string (from CSV) into number format
+  data.forEach(function(d) {
+    d.HSGrad = d["HS.Grad"]
+    d.illiteracy = d.Illiteracy
+    d.income = d.Income,
+    d.region = d["state.region"];
+    d.state = d["state.abb"]
+    // console.log(d);
+});
+
+  // xScale.domain([d3.min(data, xValue)-1, d3.max(data, xValue)+1]);
+  x1Scale.domain([2800, 7000]);
+  // yScale.domain([d3.min(data, yValue)-1, d3.max(data, yValue)+1]);
+  y1Scale.domain([30, d3.max(data, y1)+1]);
+  // radiusScale = d3.scale.sqrt().domain([0.3, 3.3]).range([5, 25]);
+  r1Scale.domain([0.3, 3.3]);
+
+  
+  // x-axis
+  svg1.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height1 + ")")
+      .call(x1Axis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width1)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Income");
+
+  // y-axis
+  svg1.append("g")
+      .attr("class", "y axis")
+      .call(y1Axis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("HS Grad percentage");
+
+  // draw dots
+  svg1.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      // .attr("r", function(d) {
+      //  return 10*Math.sqrt(d.illiteracy);
+      // })
+      .attr("r", r1Map)
+      // .style("opacity", function(d) { return 0.9 * (radiusValue(d) / d3.max(radiusValue, function(d) { return radiusValue(d); }));})
+      .attr("cx", x1Map)
+      .attr("cy", y1Map)
+      .style("fill", function(d) { return color1(c1(d));}) 
+      .on("mouseover", function(d) {
+          tooltip1.transition()
+               .duration(200)
+               .style("opacity", .9);
+          tooltip1.html(d.state + "<br/> (" + d.illiteracy + ")")
+               .style("left", (d3.event.pageX + 5) + "px")
+               .style("top", (d3.event.pageY - 28) + "px");
+      })
+      .on("mouseout", function(d) {
+          tooltip1.transition()
+               .duration(500)
+               .style("opacity", 0);
+      })
+      .sort(order);
+
+  // Defines a sort order so that the smallest dots are drawn on top.
+  function order(a, b) {
+    return r1(b) - r1(a);
+  }
+
+  // draw legend
+  var legend1 = svg1.selectAll(".legend")
+      .data(color1.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 25 + ")"; });
+
+  // draw legend colored rectangles
+  legend1.append("rect")
+      .attr("x", width1 - 16)
+      .attr("width", 16)
+      .attr("height", 16)
+      .style("fill", color1);
+
+  // draw legend text
+  legend1.append("text")
+      .attr("x", width1 - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d;})
+});
+
+</script>
+
+
+
+<div class="container" id="area2">
+<h1>Small Multiples</h1>
+</div>
+
+
+<script>
+
+var margin2 = {top: 45, right: 100, bottom: 20, left: 20},
+    width2 = 450 - margin2.left - margin2.right,
+    height2 = 90 - margin2.top - margin2.bottom;
+
+var formatPercent = d3.format(".00");
+
+var color2 = d3.scale.linear()
+          .range(['rgb(239,243,255)','rgb(189,215,231)','rgb(107,174,214)','rgb(49,130,189)','rgb(8,81,156)'])
+          // .domain([0,0.2,0.4,0.6,0.8]);
+
+var x2 = d3.scale.ordinal()
+    .rangeRoundBands([0, width2], .1);
+
+// Scales. Note the inverted domain fo y-scale: bigger is up!
+var y2 = d3.scale.linear()
+    .range([height2, 0]);
+
+
+var x2Axis = d3.svg.axis()
+    .scale(x2)
+    .orient("bottom");
+
+var y2Axis = d3.svg.axis()
+    .scale(y2)
+    .orient("left")
+    .tickFormat(formatPercent);
+
+var tip = d3.tip()
+  .attr('class', 'tooltip2')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong>" + d.feature + "\t" + d.region + "</strong><br/><span style='color:#fff'>" + d.number + "</span>";
+  })
+
+// csv loaded asynchronously
+d3.csv("small_multiple.csv", type, function(data) {
+
+  // Data is nested by feature
+  var features = d3.nest()
+      .key(function(d) { return d.feature; })
+      .entries(data);
+
+
+  // Compute the minimum and maximum year and percent across symbols.
+  x2.domain(data.map(function(d) { return d.region; }));
+  
+  // Add an SVG element for each country, with the desired dimensions and margin.
+  var svg2 = d3.select("#area2").selectAll("svg")
+    .data(features)
+    .enter()
+    .append("svg:svg")
+    .attr("width", width2 + margin2.left + margin2.right)
+    .attr("height", height2 + margin2.top + margin2.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")")
+    .each(multiple);
+
+  svg2.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(x2Axis);
+
+  svg2.append("g")
+      // Hide y axis
+      // .attr("class", "y axis")
+      // .call(yAxis)
+    .append("text")
+    .attr("x", width2 + 10)
+    .attr("y", height2/3)
+    .attr("dy", ".71em")
+    .attr("text-anchor", "start")
+    .attr("font-size", "1.1em")
+    .text(function(d) { return d.key});
+
+  svg2.call(tip);
+
+});
+
+function multiple(feature) {
+  // console.log(feature);
+  var svg2 = d3.select(this);
+
+  y2.domain([0, d3.max(feature.values, function(d) { return d.number; })]);
+
+  color2.domain([0,0.2*d3.max(feature.values, function(d) { return d.number; }),0.4*d3.max(feature.values, function(d) { return d.number; }),0.6*d3.max(feature.values, function(d) { return d.number; }),0.8*d3.max(feature.values, function(d) { return d.number; })]);
+
+  svg2.selectAll(".bar")
+      .data(feature.values)
+      .enter()
+      .append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x2(d.region); })
+      .attr("width", x2.rangeBand())
+      .attr("y", function(d) { return y2(d.number); })
+      .attr("height", function(d) { return height2 - y2(d.number); })
+      .attr("fill", function(d) {return color2(d.number)})
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+}
+
+function type(d) {
+  d.number = +d.number;
+  return d;
+}
+
+</script>
+
+
+<div class="container" id="area3">
+<h1>Parallel Coordinates</h1>
+</div>
+
+<script>
+
+var margin3 = {top: 30, right: 10, bottom: 10, left: 10},
+    width3 = 960 - margin3.left - margin3.right,
+    height3 = 500 - margin3.top - margin3.bottom;
+
+// var m = [30, 10, 10, 10],
+//     w = 960 - m[1] - m[3],
+//     h = 500 - m[0] - m[2];
+
+var x3 = d3.scale.ordinal().rangePoints([0, width3], 1),
+    y3 = {},
+    dragging = {};
+
+var line = d3.svg.line(),
+    axis = d3.svg.axis().orient("left"),
+    background,
+    foreground;
+
+var svg3 = d3.select("#area3").append("svg")
+    .attr("width", width3 + margin3.left + margin3.right)
+    .attr("height", height3 + margin3.top + margin3.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin3.left + "," + margin3.top + ")")
+
+d3.csv("para_coord.csv", function(error, state) {
+
+  // Extract the list of dimensions and create a scale for each.
+  x3.domain(dimensions = d3.keys(state[0]).filter(function(d) {
+    if(d === "state.region") {
+        y3[d] = d3.scale.ordinal()
+          .domain(state.map(function(p) { return p[d]; }))
+          .rangePoints([height3, 0]);
+    }
+    else {
+        y3[d] = d3.scale.linear()
+          .domain(d3.extent(state, function(p) { return +p[d]; }))
+          .range([height3, 0]);
+    }
+    return true;
+}));
+  // console.log(state);
+
+  // Add grey background lines for context.
+  background = svg3.append("g")
+      .attr("class", "background")
+    .selectAll("path")
+      .data(state)
+    .enter().append("path")
+      .attr("d", path);
+
+  // Add blue foreground lines for focus.
+  foreground = svg3.append("g")
+      .attr("class", "foreground")
+    .selectAll("path")
+      .data(state)
+    .enter().append("path")
+      .attr("d", path);
+
+  // Add a group element for each dimension.
+  var g = svg3.selectAll(".dimension")
+      .data(dimensions)
+    .enter().append("g")
+      .attr("class", "dimension")
+      .attr("transform", function(d) { return "translate(" + x3(d) + ")"; })
+      .call(d3.behavior.drag()
+        .on("dragstart", function(d) {
+          dragging[d] = this.__origin__ = x3(d);
+          background.attr("visibility", "hidden");
+        })
+        .on("drag", function(d) {
+          dragging[d] = Math.min(w, Math.max(0, this.__origin__ += d3.event.dx));
+          foreground.attr("d", path);
+          dimensions.sort(function(a, b) { return position(a) - position(b); });
+          x.domain(dimensions);
+          g.attr("transform", function(d) { return "translate(" + position(d) + ")"; })
+        })
+        .on("dragend", function(d) {
+          delete this.__origin__;
+          delete dragging[d];
+          transition(d3.select(this)).attr("transform", "translate(" + x3(d) + ")");
+          transition(foreground)
+              .attr("d", path);
+          background
+              .attr("d", path)
+              .transition()
+              .delay(500)
+              .duration(0)
+              .attr("visibility", null);
+        }));
+
+  // Add an axis and title.
+  g.append("g")
+      .attr("class", "axis")
+      .each(function(d) { d3.select(this).call(axis.scale(y3[d])); })
+    .append("text")
+      .attr("text-anchor", "middle")
+      .attr("y", -9)
+      .text(String);
+
+  // Add and store a brush for each axis.
+  g.append("g")
+      .attr("class", "brush")
+      .each(function(d) { d3.select(this).call(y3[d].brush = d3.svg.brush().y(y3[d]).on("brushstart", brushstart).on("brush", brush)); })
+    .selectAll("rect")
+      .attr("x", -8)
+      .attr("width", 16);
+});
+
+function position(d) {
+  var v = dragging[d];
+  return v == null ? x3(d) : v;
+}
+
+function transition(g) {
+  return g.transition().duration(500);
+}
+
+// Returns the path for a given data point.
+function path(d) {
+  return line(dimensions.map(function(p) { return [position(p), y3[p](d[p])]; }));
+}
+
+// When brushing, donâ€™t trigger axis dragging.
+function brushstart() {
+  d3.event.sourceEvent.stopPropagation();
+}
+
+// Handles a brush event, toggling the display of foreground lines.
+function brush() {
+  var actives = dimensions.filter(function(p) { return !y3[p].brush.empty(); }),
+      extents = actives.map(function(p) { return y3[p].brush.extent(); });
+  foreground.style("display", function(d) {
+    return actives.every(function(p, i) {
+      return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+    }) ? null : "none";
+  });
+}
+
+</script>
+
+
+</body>
+</html>

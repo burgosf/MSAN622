@@ -1,0 +1,33 @@
+feature,region,number
+Population,North Central,4803.0
+Population,Northeast,5495.11
+Population,South,4208.13
+Population,West,2915.31
+Income,North Central,4611.08
+Income,Northeast,4570.22
+Income,South,4011.94
+Income,West,4702.62
+Illiteracy,North Central,0.7
+Illiteracy,Northeast,1.0
+Illiteracy,South,1.74
+Illiteracy,West,1.02
+Life.Exp,North Central,71.77
+Life.Exp,Northeast,71.26
+Life.Exp,South,69.71
+Life.Exp,West,71.23
+Murder,North Central,5.27
+Murder,Northeast,4.72
+Murder,South,10.58
+Murder,West,7.22
+HS.Grad,North Central,54.52
+HS.Grad,Northeast,53.97
+HS.Grad,South,44.34
+HS.Grad,West,62.0
+Frost,North Central,138.83
+Frost,Northeast,132.78
+Frost,South,64.63
+Frost,West,102.15
+Area,North Central,62652.0
+Area,Northeast,18141.0
+Area,South,54605.13
+Area,West,134463.0
