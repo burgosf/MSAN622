@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.min.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- <title>MSAN 622 Information Visualization</title> -->
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+
+<style>
+
+body {
+  font: 11px sans-serif;
+  margin: 10px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.dot {
+  fill-opacity: .8;
+  stroke: #000;
+}
+
+.tooltip1 {
+  position: absolute;
+  width: 200px;
+  height: 28px;
+  pointer-events: none;
+}
+
+.bar:hover {
+    fill: #bcbcbc ;
+}
+
+.tooltip2 {
+    line-height: 1;
+    font-weight: bold;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #efefef;
+    border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.tooltip2:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 8px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+  /* Style northward tooltips differently */
+.tooltip2.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+.tooltip1 {
+    line-height: 1;
+    font-weight: bold;
+    width: 60px;                  
+    height: 28px;                 
+    /*padding: 2px;*/
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #efefef;
+    border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.tooltip1:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 2px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\20BC";
+  position: absolute;
+  text-align: center;
+}
+
+  /* Style northward tooltips differently */
+.tooltip1.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+.background path {
+  fill: none;
+  stroke: #ccc;
+  stroke-opacity: .25;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  /*stroke: steelblue;*/
+  stroke-opacity: .7;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+
+</style>
+</head>
+
+
+
+<body>
+
+<!-- Fixed Navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MSN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#homework">Homework</a></li>
+                <li><a href="#project">Project</a></li>
+                <li><a href="#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Homework 2</h1>
+    </div>
+</div>
+
+
+<div class="container" id="area1">
+<h1>Bubble Chart</h1>
+<p style ="font-size:16px"> Functionalities </p>
+  <ul style ="font-size:12px">
+    <li> Modified the x and y axis so that they do not start at 0, I know it is a little bit misleading but since it is not representing only a minimum increase (such as a 2% difference, I decided to do so. The idea here is to show some cluster between the different regions.</li>
+    <li> Added a legend to indicate the color by region.</li>
+    <li> Modified the opacity of the bubble as well as the order, The larger bubble are under the smallest one. </li>
+    <li> Added a tooltip to give the level of Illiteracy by state. </li>
+    <li> Added a title so the information represented by the size of the bubble is more clear. </li>
+  </ul>
+
+</div>
+
+<script>
+var margin1 = {top: 30, right: 30, bottom: 30, left: 30},
+    width1 = 600 - margin1.left - margin1.right,
+    height1 = 350 - margin1.top - margin1.bottom;
+
+// setup x 
+var x1 = function(d) { return d.income;}, // data -> value
+    x1Scale = d3.scale.linear().range([0, width1]), // value -> display
+    x1Map = function(d) { return x1Scale(x1(d));}, // data -> display
+    x1Axis = d3.svg.axis().scale(x1Scale).orient("bottom");
+
+// setup y
+var y1 = function(d) { return d.HSGrad;}, // data -> value
+    y1Scale = d3.scale.linear().range([height1, 0]), // value -> display
+    y1Map = function(d) { return y1Scale(y1(d));}, // data -> display
+    y1Axis = d3.svg.axis()
+      .scale(y1Scale)
+      .ticks(10)
+      .orient("left");
+
+var r1 = function(d) { return d.Illiteracy; },
+    r1Scale = d3.scale.sqrt().range([5, 25]),
+    r1Map = function(d) {return r1Scale(r1(d));};
+
+// setup fill color
+var c1 = function(d) { return d.region;},
+    color1 = d3.scale.category10()
+            .range(['rgb(202,0,32)','rgb(244,165,130)','rgb(146,197,222)','rgb(5,113,176)']);
+
+
+// add the graph canvas to the body of the webpage
+var svg1 = d3.select("#area1").append("svg")
+    .attr("width", width1 + margin1.left + margin1.right)
+    .attr("height", height1 + margin1.top + margin1.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin1.left + "," + margin1.top + ")");
+    // .text("Illiteracy as a function of Income and Education")
+
+// add the tooltip area to the webpage
+var tip1 = d3.tip()
+  .attr('class', 'tooltip1')
+  .offset([0, 0])
+  .html(function(d) {
+    // "<strong>" + d.state + ":</strong> <span style='color:red'>" + d.illiteracy + "</span>";
+    return "<strong>" + d.state + ": " + " </strong><span style='color:#fff'>" + d.illiteracy + "</span>";
+  });
+
+// var tooltip1 = d3.select("#area1").append("div")
+//     .attr("class", "tooltip2")
+//     .style("opacity", 0);
+
+// load data
+d3.csv("statex77.csv", function(error, data) {
+
+  // change string (from CSV) into number format
+  data.forEach(function(d) {
+    d.HSGrad = d["HS.Grad"]
+    d.illiteracy = d.Illiteracy
+    d.income = d.Income,
+    d.region = d["state.region"];
+    d.state = d["state.abb"]
+    // console.log(d);
+});
+
+  // xScale.domain([d3.min(data, xValue)-1, d3.max(data, xValue)+1]);
+  x1Scale.domain([2800, 7000]);
+  // yScale.domain([d3.min(data, yValue)-1, d3.max(data, yValue)+1]);
+  y1Scale.domain([30, 70]);
+  // radiusScale = d3.scale.sqrt().domain([0.3, 3.3]).range([5, 25]);
+  r1Scale.domain([0.3, 3.3]);
+
+  
+  // x-axis
+  svg1.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height1 + ")")
+      .call(x1Axis)
+    .append("text")
+      .attr("class", "label")
+      .attr("x", width1)
+      .attr("y", -6)
+      .style("text-anchor", "end")
+      .text("Income");
+
+  // y-axis
+  svg1.append("g")
+      .attr("class", "y axis")
+      .call(y1Axis)
+    .append("text")
+      .attr("class", "label")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("HS Grad percentage");
+
+  // draw dots
+  svg1.selectAll(".dot")
+      .data(data)
+    .enter().append("circle")
+      .attr("class", "dot")
+      .attr("r", r1Map)
+      // .style("opacity", function(d) { return 0.9 * (radiusValue(d) / d3.max(radiusValue, function(d) { return radiusValue(d); }));})
+      .attr("cx", x1Map)
+      .attr("cy", y1Map)
+      .style("fill", function(d) { return color1(c1(d));})
+      .on('mouseover', tip1.show)
+      .on('mouseout', tip1.hide)
+      .sort(order); 
+  
+  svg1.append("text")
+        .attr("x", (width1 / 2))             
+        .attr("y", 0 - (margin1.top / 2))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "16px") 
+        .style("text-decoration", "underline")  
+        .text("Illiteracy in function of Income and Education");
+      
+  svg1.call(tip1);
+
+  // Defines a sort order so that the smallest dots are drawn on top.
+  function order(a, b) {
+    return r1(b) - r1(a);
+  }
+
+  // draw legend
+  var legend1 = svg1.selectAll(".legend")
+      .data(color1.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 25 + ")"; });
+
+  // draw legend colored rectangles
+  legend1.append("rect")
+      .attr("x", width1 + 10)
+      .attr("width", 16)
+      .attr("height", 16)
+      .style("fill", color1);
+
+  // draw legend text
+  legend1.append("text")
+      .attr("x", width1 - 0)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d;})
+});
+
+</script>
+
+
+
+<div class="container" id="area2">
+<h1>Small Multiples</h1>
+<p style ="font-size:16px"> Functionalities </p>
+  <ul style ="font-size:12px">
+    <li> Added an x-axis for each multiple.</li>
+    <li> Added a label on the right of the multiple (to replace the y-axis), I 'd rather use no y-axis since the multiple are really small.</li>
+    <li> Added a tooltip to give the level of the feature by region. </li>
+  </ul>
+</div>
+
+
+<script>
+
+var margin2 = {top: 45, right: 20, bottom: 20, left: 100},
+    width2 = 450 - margin2.left - margin2.right,
+    height2 = 90 - margin2.top - margin2.bottom;
+
+var formatPercent = d3.format(".00");
+
+// setup fill color
+var c2 = function(d) { return d.region;},
+    color2 = d3.scale.category10()
+            .range(['rgb(202,0,32)','rgb(244,165,130)','rgb(146,197,222)','rgb(5,113,176)']);
+
+var x2 = d3.scale.ordinal()
+    .rangeRoundBands([0, width2], .1);
+
+// Scales. Note the inverted domain fo y-scale: bigger is up!
+var y2 = d3.scale.linear()
+    .range([height2, 0]);
+
+
+var x2Axis = d3.svg.axis()
+    .scale(x2)
+    .orient("bottom");
+
+var y2Axis = d3.svg.axis()
+    .scale(y2)
+    .orient("left")
+    .tickFormat(formatPercent);
+
+var tip2 = d3.tip()
+  .attr('class', 'tooltip2')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong>" + d.feature + "\t" + d.region + "</strong><br/><span style='color:#fff'>" + d.number + "</span>";
+  })
+
+// csv loaded asynchronously
+d3.csv("small_multiple.csv", type, function(data) {
+
+  // Data is nested by feature
+  var features = d3.nest()
+      .key(function(d) { return d.feature; })
+      .entries(data);
+
+
+  // Compute the minimum and maximum year and percent across symbols.
+  x2.domain(data.map(function(d) { return d.region; }));
+  
+  // Add an SVG element for each country, with the desired dimensions and margin.
+  var svg2 = d3.select("#area2").selectAll("svg")
+    .data(features)
+    .enter()
+    .append("svg:svg")
+    .attr("width", width2 + margin2.left + margin2.right)
+    .attr("height", height2 + margin2.top + margin2.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")")
+    .each(multiple);
+
+  svg2.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height2 + ")")
+      .call(x2Axis);
+
+  svg2.append("g")
+    .append("text")
+    // .attr("x", width2 + 10)
+    .attr("x", -60)
+    .attr("y", height2/3)
+    .attr("dy", ".71em")
+    .attr("text-anchor", "start")
+    .attr("font-size", "1.1em")
+    .text(function(d) { return d.key});
+
+  svg2.call(tip2);
+
+});
+
+function multiple(feature) {
+  // console.log(feature);
+  var svg2 = d3.select(this);
+
+  y2.domain([0, d3.max(feature.values, function(d) { return d.number; })]);
+
+  svg2.selectAll(".bar")
+      .data(feature.values)
+      .enter()
+      .append("rect")
+      .attr("class", "bar")
+      .attr("x", function(d) { return x2(d.region); })
+      .attr("width", x2.rangeBand())
+      .attr("y", function(d) { return y2(d.number); })
+      .attr("height", function(d) { return height2 - y2(d.number); })
+      .style("fill", function(d) { return color2(c2(d));}) 
+      .on('mouseover', tip2.show)
+      .on('mouseout', tip2.hide);
+}
+
+function type(d) {
+  d.number = +d.number;
+  return d;
+}
+
+</script>
+
+
+<div class="container" id="area3">
+<h1>Parallel Coordinates</h1>
+<p style ="font-size:16px"> Functionalities </p>
+  <ul style ="font-size:12px">
+    <li> Added a color representing the region.</li>
+    <li> Added a categorical data as one of the coordinate (the region).</li>
+    <li> Although the brushing feature is not working with the categorical coordinate I leave it since you can always brush on the other coordinates. </li>
+  </ul>
+</div>
+
+<script>
+
+var margin3 = {top: 30, right: 10, bottom: 10, left: 10},
+    width3 = 960 - margin3.left - margin3.right,
+    height3 = 500 - margin3.top - margin3.bottom;
+
+var x3 = d3.scale.ordinal().rangePoints([0, width3], 1),
+    y3 = {},
+    dragging = {};
+
+var line = d3.svg.line(),
+    axis = d3.svg.axis().orient("left"),
+    background,
+    foreground;
+
+// setup fill color
+var c3 = function(d) { return d["state.region"];},
+    color3 = d3.scale.category10()
+            .range(['rgb(202,0,32)','rgb(244,165,130)','rgb(146,197,222)','rgb(5,113,176)']);
+
+
+var svg3 = d3.select("#area3").append("svg")
+    .attr("width", width3 + margin3.left + margin3.right)
+    .attr("height", height3 + margin3.top + margin3.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin3.left + "," + margin3.top + ")")
+
+d3.csv("para_coord.csv", function(error, state) {
+
+  // Extract the list of dimensions and create a scale for each.
+  x3.domain(dimensions = d3.keys(state[0]).filter(function(d) {
+    if(d === "state.region") {
+        y3[d] = d3.scale.ordinal()
+          .domain(state.map(function(p) { return p[d]; }))
+          .rangePoints([height3, 0]);
+    }
+    else {
+        y3[d] = d3.scale.linear()
+          .domain(d3.extent(state, function(p) { return +p[d]; }))
+          .range([height3, 0]);
+    }
+    return true;
+}));
+
+  // Add grey background lines for context.
+  background = svg3.append("g")
+      .attr("class", "background")
+    .selectAll("path")
+      .data(state)
+    .enter().append("path")
+      .attr("d", path);
+
+  // Add blue foreground lines for focus.
+  foreground = svg3.append("g")
+      .attr("class", "foreground")
+    .selectAll("path")
+      .data(state)
+    .enter().append("path")
+      .attr("d", path)
+      .attr("stroke", function(d) { return color3(c3(d)); });
+
+  // Add a group element for each dimension.
+  var g = svg3.selectAll(".dimension")
+      .data(dimensions)
+    .enter().append("g")
+      .attr("class", "dimension")
+      .attr("transform", function(d) { return "translate(" + x3(d) + ")"; })
+      .call(d3.behavior.drag()
+        .on("dragstart", function(d) {
+          dragging[d] = this.__origin__ = x3(d);
+          background.attr("visibility", "hidden");
+        })
+        .on("drag", function(d) {
+          dragging[d] = Math.min(w, Math.max(0, this.__origin__ += d3.event.dx));
+          foreground.attr("d", path);
+          dimensions.sort(function(a, b) { return position(a) - position(b); });
+          x.domain(dimensions);
+          g.attr("transform", function(d) { return "translate(" + position(d) + ")"; })
+        })
+        .on("dragend", function(d) {
+          delete this.__origin__;
+          delete dragging[d];
+          transition(d3.select(this)).attr("transform", "translate(" + x3(d) + ")");
+          transition(foreground)
+              .attr("d", path);
+          background
+              .attr("d", path)
+              .transition()
+              .delay(500)
+              .duration(0)
+              .attr("visibility", null);
+        }));
+
+  // Add an axis and title.
+  g.append("g")
+      .attr("class", "axis")
+      .each(function(d) { d3.select(this).call(axis.scale(y3[d])); })
+    .append("text")
+      .attr("text-anchor", "middle")
+      .attr("y", -9)
+      .text(String);
+
+  // Add and store a brush for each axis.
+  g.append("g")
+      .attr("class", "brush")
+      .each(function(d) { d3.select(this).call(y3[d].brush = d3.svg.brush().y(y3[d]).on("brushstart", brushstart).on("brush", brush)); })
+    .selectAll("rect")
+      .attr("x", -8)
+      .attr("width", 16);
+});
+
+function position(d) {
+  var v = dragging[d];
+  return v == null ? x3(d) : v;
+}
+
+function transition(g) {
+  return g.transition().duration(500);
+}
+
+// Returns the path for a given data point.
+function path(d) {
+  return line(dimensions.map(function(p) { return [position(p), y3[p](d[p])]; }));
+}
+
+// When brushing, donâ€™t trigger axis dragging.
+function brushstart() {
+  d3.event.sourceEvent.stopPropagation();
+}
+
+// Handles a brush event, toggling the display of foreground lines.
+function brush() {
+  var actives = dimensions.filter(function(p) { return !y3[p].brush.empty(); }),
+      extents = actives.map(function(p) { return y3[p].brush.extent(); });
+  foreground.style("display", function(d) {
+    return actives.every(function(p, i) {
+      return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+    }) ? null : "none";
+  });
+}
+
+</script>
+
+
+</body>
+</html>
