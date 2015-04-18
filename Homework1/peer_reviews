@@ -3,8 +3,8 @@ Michaela:
 First of all, I'd like to say that I found this barchart impressive and well defined.
 I like the box surrounding the plot as well as the position of the plot overall in the page.
 I have a few comments though:
-- I like the fact that you remove any decimals from the ticks on your y-axis (useless in this exercice) but (and I also have the same problem on my barchart), the number of ticks keeps increasing with the frequency. Therefore if the most frequent letters occurs 8 times, you will have 8 ticks (ranging from 1 to 8). 
-- I think I would have positionned the legend elsewhere because in case of a high frequency towards the right of the x-axis, the bar and the legend are superposed.  Regarding the legend itself I really don't know if that's doable but I like the idea of adding 'sometimes y' to the legend only in case of a y in the text!
+- I like the fact that you removed any decimals from the ticks on your y-axis (useless in this exercice) but (and I also have the same problem on my barchart), the number of ticks keeps increasing with the frequency. Therefore, if the most frequent letters occurs 8 times, you will have 8 ticks (ranging from 1 to 8). 
+- I think I would have positionned the legend elsewhere because in case of a high frequency towards the right of the x-axis, the bar and the legend would be stacked on top of each other.  Regarding the legend itself I really don't know if that's doable but I like the idea of adding 'sometimes y' to the legend only when there is a y in the text!
 - I really like your tooltip mentionning the frequency and the letter on the bar.
 - I like how you positionned the axis labels (letter and frequency).
 
@@ -14,11 +14,18 @@ Daniel:
 The barchart looks really nice, I like the choice of the colors used. 
 The textbox and the button are definitely a plus (I am wondering if the user could use both the textbox as well as typing in the URI?). 
 Here are my comments:
-- I like the fact that you remove any decimals from the ticks on your y-axis (useless in this exercice) but (and I also have the same problem on my barchart), the number of ticks keeps increasing with the frequency. Therefore if the most frequent letters occurs 8 times, you will have 8 ticks (ranging from 1 to 8).
-- I think it is a bit confusing to automatically sort by values at the beginning of the plot and then you have to uncheck the box, I would rather let the user check the box to sort by values first.
-- The tooltip is well positioned and gives the information about the count of the letter and therefore the use of a gridline is not necessary.  I think that an x-axis would have been helpfull though, I don't really like the white space between the y-axis and the first bar on the left.
+- I like the fact that you removed any decimals from the ticks on your y-axis (useless in this exercice) but (and I also have the same problem on my barchart), the number of ticks keeps increasing with the frequency. Therefore if the most frequent letters occurs 8 times, you will have 8 ticks (ranging from 1 to 8).
+- I think it is a bit confusing to automatically sort by values at the beginning of the plot and then you have to uncheck the box, I would rather let the user check the box if they want to sort based on the values first.
+- The tooltip is well positioned and gives information about the count of the letter and therefore the use of a gridline is not necessary.  I think that an x-axis would have been helpfull though, I don't really like the white space between the y-axis and the first bar on the left.
 
 
 Weiwei:
+
+The plot looks nice and I also like the description part of it (even though we are not judged on that).  You even included a link to the source code, it reminds me a blog post of Mike Bostock!
+A few comments though regarding the plot:
+- I think you should remove the decimals from the ticks (quite unlikely to have less than 1 unit).
+- I like your tooltip. The information displayed is clear and eye-catchy, I would maybe change for a small triangle below the tip (it looks a little bit weird but that's being picky).
+- I like the opacity of the horizontal gridlines, I would maybe use a darker x and y axis...
+	
 
 
