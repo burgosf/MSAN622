@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style> /* set the CSS */
+
+body { font: 10px sans-serif;}
+
+.axis path,
+.axis line_li {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+
+</style>
+<body>
+
+<!-- load the d3.js library -->    
+<script src="http://d3js.org/d3.v3.min.js"></script>
+
+<script>
+
+// Set the dimensions of the canvas / graph
+var margin_li = {top: 30, right: 20, bottom: 30, left: 30},
+    width_li = 600 - margin_li.left - margin_li.right,
+    height_li = 270 - margin_li.top - margin_li.bottom;
+
+// Parse the date / time
+var parseDate = d3.time.format("%Y-%m-%d").parse,
+    formatDate = d3.time.format("%b-%y"),
+    bisectDate = d3.bisector(function(d) { return d.date; }).left;
+
+// Set the ranges
+var x_li = d3.time.scale().range([0, width_li]);
+var y_li = d3.scale.linear().range([height_li, 0]);
+
+// Define the axes
+var xAxis_li = d3.svg.axis().scale(x_li)
+    .orient("bottom").ticks(5);
+
+var yAxis_li = d3.svg.axis().scale(y_li)
+    .orient("left").ticks(5);
+
+// Define the line
+var valueline_li = d3.svg.line()
+    .x(function(d) { return x_li(d.date); })
+    .y(function(d) { return y_li(d.drivers); });
+    
+// Adds the svg canvas
+var svg_li = d3.select("body").append("svg")
+    .attr("width", width_li + margin_li.left + margin_li.right + 30)
+    .attr("height", height_li + margin_li.top + margin_li.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin_li.left + "," + margin_li.top + ")");
+
+var lineSvg = svg_li.append("g"); 
+
+var focus_li = svg_li.append("g") 
+    .style("display", "none");
+
+// Get the data
+d3.csv("Seatbelts.csv", function(error, data) {
+    data.forEach(function(d) {
+        d.date = parseDate(d.time);
+        d.drivers = +d.DriversKilled;
+    });
+
+    // Scale the range of the data
+    x_li.domain(d3.extent(data, function(d) { return d.date; }));
+    y_li.domain([0, d3.max(data, function(d) { return d.drivers; })]);
+
+    // Add the valueline path.
+    lineSvg.append("path")
+        .attr("class", "line_li")
+        .attr("stroke", "steelblue") 
+        .attr("stroke-width",  2)
+        .style("fill", "none")
+        .attr("d", valueline_li(data));
+
+    // Add the X Axis
+    svg_li.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(-10," + height_li + ")")
+        .call(xAxis_li);
+
+    // Add the Y Axis
+    svg_li.append("g")
+        .attr("class", "y axis")
+        .call(yAxis_li);
+
+    svg_li.append("text")
+        .attr("class", "x label")
+        .attr("text-anchor", "end")
+        .attr("x", width_li)
+        .attr("y", height_li - 6)
+        .text("time");
+
+    svg_li.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", 6)
+        .attr("dy", ".75em")
+        .attr("transform", "rotate(-90)")
+        .text("Nb of drivers killed");
+
+
+   // append the x line
+    focus_li.append("line")
+        .attr("class", "x")
+        .style("stroke", "blue")
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.5)
+        .attr("y1", 0)
+        .attr("y2", height_li);
+
+    // append the y line
+    focus_li.append("line")
+        .attr("class", "y")
+        .style("stroke", "blue")
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.5)
+        .attr("x1", width_li)
+        .attr("x2", width_li);
+
+    // append the circle at the intersection
+    focus_li.append("circle")
+        .attr("class", "y")
+        .style("fill", "none")
+        .style("stroke", "blue")
+        .attr("r", 4);
+
+    // place the value at the intersection
+    focus_li.append("text")
+        .attr("class", "y1")
+        .style("stroke", "white")
+        .style("stroke-width", "3.5px")
+        .style("opacity", 0.8)
+        .attr("dx", 8)
+        .attr("dy", "-.3em");
+    focus_li.append("text")
+        .attr("class", "y2")
+        .attr("dx", 8)
+        .attr("dy", "-.3em");
+
+    // place the date at the intersection
+    focus_li.append("text")
+        .attr("class", "y3")
+        .style("stroke", "white")
+        .style("stroke-width", "3.5px")
+        .style("opacity", 0.8)
+        .attr("dx", 8)
+        .attr("dy", "1em");
+    focus_li.append("text")
+        .attr("class", "y4")
+        .attr("dx", 8)
+        .attr("dy", "1em");
+    
+    // append the rectangle to capture mouse
+    svg_li.append("rect")
+        .attr("width", width_li)
+        .attr("height", height_li)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .on("mouseover", function() { focus_li.style("display", null); })
+        .on("mouseout", function() { focus_li.style("display", "none"); })
+        .on("mousemove", mousemove);
+
+    var legend_li = svg_li.selectAll('.legend')
+        .data(data)
+        .enter()
+        .append('g')
+        .attr('class', 'legend');
+
+    legend_li.append('rect')
+        .attr('x', width_li - 40)
+        .attr('y',  0)
+        .attr('width', 15)
+        .attr('height', 15)
+        .style('fill', "steelblue");
+
+    legend_li.append('text')
+        .attr('x', width_li - 20)
+        .attr('y',   12)
+        // .attr('opacity', 0.2)
+        .style("font-size","10px")
+        .style("fill", "grey")
+        // .style("font-weight", "bold")
+        .text("DriversKilled");
+
+
+    function mousemove() {
+		var x0 = x_li.invert(d3.mouse(this)[0]),
+		    i = bisectDate(data, x0, 1),
+		    d0 = data[i - 1],
+		    d1 = data[i],
+		    d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+
+		focus_li.select("circle.y")
+		    .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")");
+
+		focus_li.select("text.y1")
+		    .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+		    .text(d.drivers);
+
+		focus_li.select("text.y2")
+		    .attr("transform", "translate(" + x_li(d.date) + "," +  y_li(d.drivers) + ")")
+		    .text(d.drivers);
+
+		focus_li.select("text.y3")
+		    .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+		    .text(formatDate(d.date));
+
+		focus_li.select("text.y4")
+		    .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+		    .text(formatDate(d.date));
+
+		focus_li.select(".x")
+		    .attr("transform",  "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+		    .attr("y2", height_li - y_li(d.drivers));
+
+		focus_li.select(".y")
+		    .attr("transform", "translate(" + width_li * -1 + "," + y_li(d.drivers) + ")")
+		    .attr("x2", width_li + width_li);
+	}
+
+});
+
+</script>
+</body>

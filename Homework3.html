@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.min.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- <title>MSAN 622 Information Visualization</title> -->
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+
+<style>
+
+body {
+  font: 10px sans-serif;
+  margin: 10px;
+}
+
+.axis path,
+.axis line_li {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+.axis line_sa {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.tag text {
+  text-anchor: end;
+}
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+</style>
+</head>
+
+
+
+<body>
+
+<!-- Fixed Navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MSN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#homework">Homework</a></li>
+                <li><a href="#project">Project</a></li>
+                <li><a href="#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Homework 2</h1>
+    </div>
+</div>
+
+
+<div class="container" id="area1">
+<h1>Line Plot</h1>
+<p style ="font-size:16px"> Functionalities </p>
+  <ul style ="font-size:12px">
+    <li> Basic: I just plotted a basic line chart representing the number of drivers killed in the UK over time. I added some basics such as axis labels and a legend</li>
+    <li> Moderate: I added a more complex tooltip (or detail on demand) that indicates the value and the period associated to a single point in time.</li>
+  </ul>
+</div>
+
+<script>
+// Set the dimensions of the canvas / graph
+var margin_li = {top: 30, right: 20, bottom: 30, left: 30},
+    width_li = 600 - margin_li.left - margin_li.right,
+    height_li = 270 - margin_li.top - margin_li.bottom;
+
+// Parse the date / time
+var parseDate = d3.time.format("%Y-%m-%d").parse,
+    formatDate = d3.time.format("%b-%y"),
+    bisectDate = d3.bisector(function(d) { return d.date; }).left;
+
+// Set the ranges
+var x_li = d3.time.scale().range([0, width_li]);
+var y_li = d3.scale.linear().range([height_li, 0]);
+
+// Define the axes
+var xAxis_li = d3.svg.axis().scale(x_li)
+    .orient("bottom").ticks(5);
+
+var yAxis_li = d3.svg.axis().scale(y_li)
+    .orient("left").ticks(5);
+
+// Define the line
+var valueline_li = d3.svg.line()
+    .x(function(d) { return x_li(d.date); })
+    .y(function(d) { return y_li(d.drivers); });
+    
+// Adds the svg canvas
+var svg_li = d3.select("#area1").append("svg")
+    .attr("width", width_li + margin_li.left + margin_li.right + 30)
+    .attr("height", height_li + margin_li.top + margin_li.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin_li.left + "," + margin_li.top + ")");
+
+var lineSvg = svg_li.append("g"); 
+
+var focus_li = svg_li.append("g") 
+    .style("display", "none");
+
+// Get the data
+d3.csv("Seatbelts.csv", function(error, data) {
+    data.forEach(function(d) {
+        d.date = parseDate(d.time);
+        d.drivers = +d.DriversKilled;
+    });
+
+    // Scale the range of the data
+    x_li.domain(d3.extent(data, function(d) { return d.date; }));
+    y_li.domain([0, d3.max(data, function(d) { return d.drivers; })]);
+
+    // Add the valueline path.
+    lineSvg.append("path")
+        .attr("class", "line_li")
+        .attr("stroke", "steelblue") 
+        .attr("stroke-width",  2)
+        .style("fill", "none")
+        .attr("d", valueline_li(data));
+
+    // Add the X Axis
+    svg_li.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(-10," + height_li + ")")
+        .call(xAxis_li);
+
+    // Add the Y Axis
+    svg_li.append("g")
+        .attr("class", "y axis")
+        .call(yAxis_li);
+
+    svg_li.append("text")
+        .attr("class", "x label")
+        .attr("text-anchor", "end")
+        .attr("x", width_li)
+        .attr("y", height_li - 6)
+        .text("time");
+
+    svg_li.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", 6)
+        .attr("dy", ".25em")
+        .attr("transform", "rotate(-90)")
+        .text("Nb of drivers killed");
+
+
+   // append the x line
+    focus_li.append("line")
+        .attr("class", "x")
+        .style("stroke", "blue")
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.5)
+        .attr("y1", 0)
+        .attr("y2", height_li);
+
+    // append the y line
+    focus_li.append("line")
+        .attr("class", "y")
+        .style("stroke", "blue")
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.5)
+        .attr("x1", width_li)
+        .attr("x2", width_li);
+
+    // append the circle at the intersection
+    focus_li.append("circle")
+        .attr("class", "y")
+        .style("fill", "none")
+        .style("stroke", "blue")
+        .attr("r", 4);
+
+    // place the value at the intersection
+    focus_li.append("text")
+        .attr("class", "y1")
+        .style("stroke", "white")
+        .style("stroke-width", "3.5px")
+        .style("opacity", 0.8)
+        .attr("dx", 8)
+        .attr("dy", "-.3em");
+    focus_li.append("text")
+        .attr("class", "y2")
+        .attr("dx", 8)
+        .attr("dy", "-.3em");
+
+    // place the date at the intersection
+    focus_li.append("text")
+        .attr("class", "y3")
+        .style("stroke", "white")
+        .style("stroke-width", "3.5px")
+        .style("opacity", 0.8)
+        .attr("dx", 8)
+        .attr("dy", "1em");
+    focus_li.append("text")
+        .attr("class", "y4")
+        .attr("dx", 8)
+        .attr("dy", "1em");
+    
+    // append the rectangle to capture mouse
+    svg_li.append("rect")
+        .attr("width", width_li)
+        .attr("height", height_li)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .on("mouseover", function() { focus_li.style("display", null); })
+        .on("mouseout", function() { focus_li.style("display", "none"); })
+        .on("mousemove", mousemove);
+
+    var legend_li = svg_li.selectAll('.legend')
+        .data(data)
+        .enter()
+        .append('g')
+        .attr('class', 'legend');
+
+    legend_li.append('rect')
+        .attr('x', width_li - 40)
+        .attr('y',  0)
+        .attr('width', 15)
+        .attr('height', 15)
+        .style('fill', "steelblue");
+
+    legend_li.append('text')
+        .attr('x', width_li - 20)
+        .attr('y',   12)
+        // .attr('opacity', 0.2)
+        .style("font-size","10px")
+        .style("fill", "grey")
+        // .style("font-weight", "bold")
+        .text("DriversKilled");
+
+
+    function mousemove() {
+    var x0 = x_li.invert(d3.mouse(this)[0]),
+        i = bisectDate(data, x0, 1),
+        d0 = data[i - 1],
+        d1 = data[i],
+        d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+
+    focus_li.select("circle.y")
+        .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")");
+
+    focus_li.select("text.y1")
+        .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+        .text(d.drivers);
+
+    focus_li.select("text.y2")
+        .attr("transform", "translate(" + x_li(d.date) + "," +  y_li(d.drivers) + ")")
+        .text(d.drivers);
+
+    focus_li.select("text.y3")
+        .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+        .text(formatDate(d.date));
+
+    focus_li.select("text.y4")
+        .attr("transform", "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+        .text(formatDate(d.date));
+
+    focus_li.select(".x")
+        .attr("transform",  "translate(" + x_li(d.date) + "," + y_li(d.drivers) + ")")
+        .attr("y2", height_li - y_li(d.drivers));
+
+    focus_li.select(".y")
+        .attr("transform", "translate(" + width_li * -1 + "," + y_li(d.drivers) + ")")
+        .attr("x2", width_li + width_li);
+  }
+
+});
+
+
+</script>
+
+
+
+<div class="container" id="area2">
+<h1>Stacked Area</h1>
+<p style ="font-size:16px"> Functionalities </p>
+  <ul style ="font-size:12px">
+    <li> Basic: My second vizualization is a stacked area plot representing the number of front and rear passengers injured in the UK over time. I added a legend as well as a label on the y-axis, I didn't add a label on the x-axis due to the context.</li>
+    <li> Moderate: I added panning on the context. You first need to brush (and then you can drag it).</li>
+    <li> Advanced: I added brushing.  By selecting the period in the context you can vizualize it on the main plot are.</li>
+  </ul>
+</div>
+
+
+<script>
+
+var margin_sa = {top: 10, right: 10, bottom: 100, left: 40},
+    margin2_sa = {top: 430, right: 10, bottom: 20, left: 40},
+    width_sa = 960 - margin_sa.left - margin_sa.right,
+    height_sa = 500 - margin_sa.top - margin_sa.bottom,
+    height2_sa = 500 - margin2_sa.top - margin2_sa.bottom;
+
+
+var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+var x_sa = d3.time.scale().range([0, width_sa]),
+    x2_sa = d3.time.scale().range([0, width_sa]),
+    y_sa = d3.scale.linear().range([height_sa, 0]),
+    y2_sa = d3.scale.linear().range([height2_sa, 0]);
+
+var color = d3.scale.category20();
+
+var xAxis_sa = d3.svg.axis().scale(x_sa).orient("bottom"),
+    xAxis2_sa = d3.svg.axis().scale(x2_sa).orient("bottom"),
+    yAxis_sa = d3.svg.axis().scale(y_sa).orient("left");
+
+var brush = d3.svg.brush()
+   .x(x2_sa)
+  .on("brush", brushed);
+
+var area = d3.svg.area()
+    .interpolate("basis")
+    .x(function(d) { return x_sa(d.date); })
+        .y0(function(d) { return y_sa(d.y0); })
+        .y1(function(d) { return y_sa(d.y0 + d.y); });
+
+var area2 = d3.svg.area()
+    .interpolate("basis")
+    .x(function(d) { return x2_sa(d.date); })  
+        .y0(function(d) { return y2_sa(d.y0); })
+        .y1(function(d) { return y2_sa(d.y0 + d.y); });
+
+var stack = d3.layout.stack()
+        .values(function(d) { return d.values; });
+
+var svg_sa = d3.select("#area2").append("svg")
+        .attr("width", width_sa + margin_sa.left + margin_sa.right)
+        .attr("height", height_sa + margin_sa.top + margin_sa.bottom);
+
+svg_sa.append("defs").append("clipPath")
+    .attr("id", "clip")
+    .append("rect")
+    .attr("width", width_sa)
+    .attr("height", height_sa);
+
+var focus_sa = svg_sa.append("g")
+    .attr("transform", "translate(" + margin_sa.left + "," + margin_sa.top + ")");
+
+var context = svg_sa.append("g")
+    .attr("transform", "translate(" + margin2_sa.left + "," + margin2_sa.top + ")");
+
+
+d3.csv("stacked.csv", function(error, data) {
+
+    color.domain(d3.keys(data[0]).filter(function(key) { return key !== "time"; }));
+
+    data.forEach(function(d) {
+        d.date = parseDate(d.time);
+    });
+
+    var allTags = stack(color.domain().map(function(name) {
+        return {
+            name: name,
+            values: data.map(function(d) {
+                return {date: d.date, y: +d[name]};
+            })
+        };
+    }));
+
+
+    x_sa.domain(d3.extent(data, function(d) { return d.date; }));
+    y_sa.domain([0,d3.max(allTags, function(d) { return d3.max(d.values, function (d) { return d.y + d.y0; }); })]);
+    x2_sa.domain(x_sa.domain());
+    y2_sa.domain(y_sa.domain());  
+
+    // d3.select("svg").remove();
+
+    svg_sa.append("text")
+        .attr("class", "y label")
+        .attr("text-anchor", "end")
+        .attr("y", 43)
+        .attr("dy", "0.75em")
+        .attr("transform", "rotate(-90)")
+        .text("Nb of drivers injured");
+
+    
+    focus_sa.selectAll('path')
+        .data(allTags)
+        .enter()
+        .append('path')
+        .attr('clip-path','url(#clip)')
+        .attr("d", function(d) { return area(d.values); })
+        .attr('class','focus')
+        .style("fill", function(d) { return color(d.name); });
+
+    focus_sa.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height_sa + ")")
+        .call(xAxis_sa);
+
+    focus_sa.append("g")
+        .attr("class", "y axis")
+        .call(yAxis_sa);
+
+
+    context.selectAll('path')
+        .data(allTags)
+        .enter()
+        .append('path')
+        .attr('class','context')
+        .attr("d", function(d) { return area2(d.values); })
+        .style("fill", function(d) { return color(d.name); });
+
+
+    context.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height2_sa + ")")
+        .call(xAxis2_sa);
+
+    context.append("g")
+        .attr("class", "x brush")
+        .call(brush)
+        .selectAll("rect")
+        .attr("y", -6)
+        .attr("height", height2_sa + 7);
+
+    var legend_sa = svg_sa.selectAll('.legend')
+        .data(allTags)
+        .enter()
+        .append('g')
+        .attr('class', 'legend');
+
+    legend_sa.append('rect')
+        .attr('x', width_sa - 20)
+        .attr('y', function(d, i){ return i *  20;})
+        .attr('width', 15)
+        .attr('height', 15)
+        .style('fill', function(d) { 
+          return color(d.name);
+        });
+
+    legend_sa.append('text')
+        .attr('x', width_sa - 2)
+        .attr('y', function(d, i){ return (i *  20) + 10;})
+        .text(function(d){ return d.name; });
+
+
+
+});
+
+
+function brushed() {   
+    x_sa.domain(brush.empty() ? x2_sa.domain() : brush.extent());
+    focus_sa.selectAll("path.focus").attr("d", function(d){return area(d.values)});
+    focus_sa.select(".x.axis").call(xAxis_sa);
+}
+
+</script>
+
+
+</body>
+</html>
