@@ -48,7 +48,7 @@ var valueline_li = d3.svg.line()
     .y(function(d) { return y_li(d.drivers); });
     
 // Adds the svg canvas
-var svg_li = d3.select("body").append("svg")
+var svg_li = d3.select("#area1").append("svg")
     .attr("width", width_li + margin_li.left + margin_li.right + 30)
     .attr("height", height_li + margin_li.top + margin_li.bottom)
     .append("g")

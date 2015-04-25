@@ -67,7 +67,7 @@ var area2 = d3.svg.area()
 var stack = d3.layout.stack()
         .values(function(d) { return d.values; });
 
-var svg_sa = d3.select("body").append("svg")
+var svg_sa = d3.select("#area3").append("svg")
         .attr("width", width_sa + margin_sa.left + margin_sa.right)
         .attr("height", height_sa + margin_sa.top + margin_sa.bottom);
 
