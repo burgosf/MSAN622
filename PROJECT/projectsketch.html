@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<head>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.min.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- <title>MSAN 622 Information Visualization</title> -->
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+
+<style>
+
+body {
+  font: 11px sans-serif;
+  margin: 10px;
+}
+
+</style>
+</head>
+
+
+<body>
+<!-- Fixed Navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MSN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#homework">Homework</a></li>
+                <li><a href="#project">Project</a></li>
+                <li><a href="#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Project Dataset</h1>
+    </div>
+</div>
+
+
+<div class="container">
+    <p>Planned Tools:
+        <li>I am planning on doing all my preprocessing work in python and more specifically using iPython Notebook and pandas. I will be able to aggregate the data as needed and therefore limit the number of operations I have to do in d3. </li>
+        <li>If needed I will use some other libraries to encode my data in the desired format like json, csv, ...</li>
+        <li>On the visualization side I will use d3 per requested.</li>
+    </p>
+    <p>Planned Techniques:
+        <li>I am planning on implementing a treemap so the user can visualize the relative importance of the different sectors of the S&P 500. I think that a treemap is eye catchy and will clearly show the relative importance of a given sector compared to others.</li>
+        <li>I will also implement a line chart representing the performance of a sector over times</li>
+        <li>Then I am planning on using tooltips to give more detailed informations about the sector you are looking at.</li>
+    </p>
+    <p>Planned Interaction:
+    	<li>I am planning on implementing a zooming technique since it is I think appropriate to a treemap so it will be per-technique.</li>
+    </p>
+    <p>Planned Interface:
+        <div class="media">
+            <div class="media-left">
+                <a href="#">
+                    <img src="treemap.png" style="width: 400px; height: 300px;">
+                </a>
+            </div>
+        </div>
+    </p>
+</div>
+
+
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/d3.min.js"></script>
+
+</body>
+</html>
