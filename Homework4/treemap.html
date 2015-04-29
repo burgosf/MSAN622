@@ -2,35 +2,44 @@
 <meta charset="utf-8">
 <style>
 
+@import url(http://fonts.googleapis.com/css?family=Wire+One);
+
 body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Wire One";
   margin: auto;
   position: relative;
-  width: 960px;
+  padding: 20px;
+  height: 100%;
 }
-
+ 
 form {
   position: absolute;
   right: 10px;
   top: 10px;
 }
-
+ 
 .node {
-  border: solid 1px white;
-  font: 10px sans-serif;
-  line-height: 12px;
-  overflow: hidden;
-  position: absolute;
-  text-indent: 2px;
+    border: solid 1px white;
+    line-height: 0.95;
+    overflow: hidden;
+    position: absolute;
+    border-radius: 6px;
 }
 
+.node div {
+   padding: 6px 4%;
+}
+
+
 </style>
-<!-- <form>
-  <label><input type="radio" name="mode" value="size" checked> Size</label>
-  <label><input type="radio" name="mode" value="count"> Count</label>
-</form> -->
+
+<body>
+
 <script src="http://d3js.org/d3.v3.min.js"></script>
+
 <script>
+
+var genre = {name: "genre", children: [{name: "Action", size: 30933235.98}, {name: "Animation", size: 33265530.08}, {name: "Comedy", size: 14659925.25}, {name: "Drama", size: 13405876.79}, {name: "Documentary", size: 908125.2}, {name: "Romance", size: 15102835.78}, {name: "Short", size: 507122.87}]};
 
 var margin = {top: 40, right: 10, bottom: 10, left: 10},
     width = 960 - margin.left - margin.right,
@@ -41,7 +50,7 @@ var color = d3.scale.category20c();
 var treemap = d3.layout.treemap()
     .size([width, height])
     .sticky(true)
-    .value(function(d) { return d.budget; });
+    .value(function(d) { return d.size; });
 
 var div = d3.select("body").append("div")
     .style("position", "relative")
@@ -50,27 +59,18 @@ var div = d3.select("body").append("div")
     .style("left", margin.left + "px")
     .style("top", margin.top + "px");
 
-d3.json("avg_budget_genre.json", function(error, root) {
-  var node = div.datum(root).selectAll(".node")
+  var node = div.datum(genre).selectAll(".node")
       .data(treemap.nodes)
     .enter().append("div")
       .attr("class", "node")
       .call(position)
-      .style("background", function(d) { return d.children ? color(d.name) : null; })
+      .style("background-color", function(d) {
+          return d.name == 'tree' ? '#fff' : color(d.name); })
+      .append('div')
+      .style("font-size", function(d) {
+          // compute font size based on sqrt(area)
+          return Math.max(10, 0.18*Math.sqrt(d.area))+'px'; })
       .text(function(d) { return d.children ? null : d.name; });
-
-  d3.selectAll("input").on("change", function change() {
-    var value = this.value === "count"
-        ? function() { return 1; }
-        : function(d) { return d.size; };
-
-    node
-        .data(treemap.value(value).nodes)
-      .transition()
-        .duration(1500)
-        .call(position);
-  });
-});
 
 function position() {
   this.style("left", function(d) { return d.x + "px"; })
@@ -80,3 +80,4 @@ function position() {
 }
 
 </script>
+</body>
