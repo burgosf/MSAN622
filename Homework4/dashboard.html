@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<head>    
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<script src="http://d3js.org/d3.v2.js"></script>
+<!-- <title>MSAN 622 Information Visualization</title> -->
+<style type="text/css">
+
+
+#pieChart {    
+	position:absolute;
+	top:10px;
+	left:10px;
+	width:400px;
+	height: 400px; 
+}
+
+
+
+#lineChart {    
+	position:absolute;
+	top:10px;
+	left:410px;
+	height: 150px;
+}
+
+#barChart {
+	position:absolute;
+	top:160px;
+	left:410px;
+	height: 250px;
+}
+
+.slice {
+   font-size: 12pt;
+   font-family: Verdana;
+   fill: white; //svg specific - instead of color
+   font-weight: bold;	
+  		} 
+
+/*for line chart*/
+.axis path, .axis line {
+    fill: none;
+    stroke: black;
+    shape-rendering: crispEdges; 
+}
+
+.line {
+  fill: none;
+  stroke-width: 3px;
+}
+
+.dot {
+  stroke-width: 1.5px;
+  }
+				
+
+.axis text {
+    font-family: Verdana;
+    font-size: 11px;
+}
+
+.title {
+	 font-family: Verdana;
+    font-size: 15px;	
+		
+}
+
+.xAxis {
+    font-family: verdana;
+    font-size: 11px;
+    fill: black;
+}  
+
+.yAxis {
+    font-family: verdana;
+    font-size: 11px;
+    fill: white;
+}
+
+div.tooltip {
+  position: absolute;	
+  text-align: center;	
+  width: 60px;	
+  height: 28px;		
+  padding: 2px;	
+  font: 12px sans-serif;	
+  background: lightgrey;	
+  border: 0px;					
+  border-radius: 8px;
+}
+  
+table {
+	border-collapse:collapse;
+	border: 0px;	
+	font-family: Verdana;	
+	color: #5C5558;
+	font-size: 12px;
+	text-align: right;			
+}
+
+td {
+	padding-left: 10px;		
+}
+
+#lineChartTitle1 {
+	font-family: Verdana;
+	font-size  : 14px;
+	fill       : lightgrey;
+	font-weight: bold;
+	text-anchor: middle;
+}
+
+#lineChartTitle2 {
+	font-family: Verdana;
+	font-size  : 72px;
+	fill       : grey;
+	text-anchor: middle;
+	font-weight: bold;
+}
+				 
+</style>
+</head>
+<body>
+  
+    <div id="pieChart"></div>
+    <div id="barChart"></div>  
+    <div id="lineChart"></div>
+    <script type="text/javascript">
+    
+/*
+################ FORMATS ##################
+-------------------------------------------
+*/
+
+
+var 	formatAsPercentage = d3.format("%"),
+		formatAsPercentage1Dec = d3.format(".1%"),
+		formatAsInteger = d3.format(","),
+		fsec = d3.time.format("%S s"),
+		fmin = d3.time.format("%M m"),
+		fhou = d3.time.format("%H h"),
+		fwee = d3.time.format("%a"),
+		fdat = d3.time.format("%d d"),
+		fmon = d3.time.format("%b")
+		;
+
+/*
+############# PIE CHART ###################
+-------------------------------------------
+*/
+
+
+
+function dsPieChart(){
+
+	var dataset = [
+			{category: "Action", measure: 30933236},
+	      {category: "Animation", measure: 33265530},
+	      {category: "Comedy", measure: 14659925},
+	      {category: "Drama", measure: 13405876},
+	      {category: "Documentary", measure: 908125},
+	      {category: "Romance", measure: 15102835},
+	      {category: "Short", measure: 507123}
+	      ]
+	      ;
+
+	var width = 400,
+		height = 400,
+		outerRadius = Math.min(width, height) / 2,
+		innerRadius = outerRadius * .999,   
+		   // for animation
+		innerRadiusFinal = outerRadius * .5,
+		innerRadiusFinal3 = outerRadius* .45,
+		color = d3.scale.category20()
+		;
+	    
+	var vis = d3.select("#pieChart")
+	     .append("svg:svg")              
+	     .data([dataset])                   
+	     .attr("width", width)           
+	     .attr("height", height)
+	     .append("svg:g")                
+	     .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")");
+				
+   var arc = d3.svg.arc()              
+        .outerRadius(outerRadius).innerRadius(innerRadius);
+   
+   // for animation
+   var arcFinal = d3.svg.arc().innerRadius(innerRadiusFinal).outerRadius(outerRadius);
+	var arcFinal3 = d3.svg.arc().innerRadius(innerRadiusFinal3).outerRadius(outerRadius);
+
+   var pie = d3.layout.pie()           
+        .value(function(d) { return d.measure; });
+
+   var arcs = vis.selectAll("g.slice")     
+        .data(pie)                         
+        .enter()                           
+        .append("svg:g")
+        .attr("class", "slice")
+        .on("mouseover", mouseover)
+    	.on("mouseout", mouseout)
+    	.on("click", up)
+    	;
+    				
+        arcs.append("svg:path")
+           .attr("fill", function(d, i) { return color(i); } ) 
+           .attr("d", arc)     //this creates the actual SVG path using the associated data (pie) with the arc drawing function
+			.append("svg:title") //mouseover title showing the figures
+			.text(function(d) { return d.data.category + ": " + formatAsInteger(d.data.measure); });			
+
+        d3.selectAll("g.slice").selectAll("path").transition()
+			    .duration(750)
+			    .delay(10)
+			    .attr("d", arcFinal )
+			    ;
+	
+	  // Add a label to the larger arcs, translated to the arc centroid and rotated.
+	  // source: http://bl.ocks.org/1305337#index.html
+	  arcs.filter(function(d) { return d.endAngle - d.startAngle > .2; })
+	  		.append("svg:text")
+	      .attr("dy", ".35em")
+	      .attr("text-anchor", "middle")
+	      .attr("transform", function(d) { return "translate(" + arcFinal.centroid(d) + ")rotate(" + angle(d) + ")"; })
+	      //.text(function(d) { return formatAsPercentage(d.value); })
+	      .text(function(d) { return d.data.category; })
+	      ;
+	   
+	   // Computes the label angle of an arc, converting from radians to degrees.
+		function angle(d) {
+		    var a = (d.startAngle + d.endAngle) * 90 / Math.PI - 90;
+		    return a > 90 ? a - 180 : a;
+		}
+		    
+		
+		// Pie chart title			
+		vis.append("svg:text")
+	     	.attr("dy", ".35em")
+	      .attr("text-anchor", "middle")
+	      .text("Budget share")
+	      .attr("class","title")
+	      ;		    
+
+
+		
+	function mouseover() {
+	  d3.select(this).select("path").transition()
+	      .duration(750)
+	      .attr("d", arcFinal3)
+	      ;
+	}
+	
+	function mouseout() {
+	  d3.select(this).select("path").transition()
+	      .duration(750)
+	      .attr("d", arcFinal)
+	      ;
+	}
+	
+	function up(d, i) {
+			updateBarChart(d.data.category, color(i));
+			updateLineChart(d.data.category, color(i));
+	}
+}
+
+dsPieChart();
+
+/*
+############# BAR CHART ###################
+-------------------------------------------
+*/
+
+
+
+var datasetBarChart = [
+ {'category': 'r1', 'group': 'All', 'measure': 7.01},
+ {'category': 'r2', 'group': 'All', 'measure': 4.02},
+ {'category': 'r3', 'group': 'All', 'measure': 4.72},
+ {'category': 'r4', 'group': 'All', 'measure': 6.37},
+ {'category': 'r5', 'group': 'All', 'measure': 9.8},
+ {'category': 'r6', 'group': 'All', 'measure': 13.04},
+ {'category': 'r7', 'group': 'All', 'measure': 15.55},
+ {'category': 'r8', 'group': 'All', 'measure': 13.88},
+ {'category': 'r9', 'group': 'All', 'measure': 8.95},
+ {'category': 'r10', 'group': 'All', 'measure': 16.85},
+ {'category': 'r1', 'group': 'Action', 'measure': 10.35},
+ {'category': 'r2', 'group': 'Action', 'measure': 6.13},
+ {'category': 'r3', 'group': 'Action', 'measure': 6.85},
+ {'category': 'r4', 'group': 'Action', 'measure': 8.05},
+ {'category': 'r5', 'group': 'Action', 'measure': 10.57},
+ {'category': 'r6', 'group': 'Action', 'measure': 12.25},
+ {'category': 'r7', 'group': 'Action', 'measure': 13.45},
+ {'category': 'r8', 'group': 'Action', 'measure': 10.74},
+ {'category': 'r9', 'group': 'Action', 'measure': 6.77},
+ {'category': 'r10', 'group': 'Action', 'measure': 14.54},
+ {'category': 'r1', 'group': 'Animation', 'measure': 2.88},
+ {'category': 'r2', 'group': 'Animation', 'measure': 2.02},
+ {'category': 'r3', 'group': 'Animation', 'measure': 3.25},
+ {'category': 'r4', 'group': 'Animation', 'measure': 5.17},
+ {'category': 'r5', 'group': 'Animation', 'measure': 9.58},
+ {'category': 'r6', 'group': 'Animation', 'measure': 15.46},
+ {'category': 'r7', 'group': 'Animation', 'measure': 18.97},
+ {'category': 'r8', 'group': 'Animation', 'measure': 17.09},
+ {'category': 'r9', 'group': 'Animation', 'measure': 8.74},
+ {'category': 'r10', 'group': 'Animation', 'measure': 16.76},
+ {'category': 'r1', 'group': 'Comedy', 'measure': 6.44},
+ {'category': 'r2', 'group': 'Comedy', 'measure': 3.87},
+ {'category': 'r3', 'group': 'Comedy', 'measure': 4.63},
+ {'category': 'r4', 'group': 'Comedy', 'measure': 6.34},
+ {'category': 'r5', 'group': 'Comedy', 'measure': 9.96},
+ {'category': 'r6', 'group': 'Comedy', 'measure': 13.77},
+ {'category': 'r7', 'group': 'Comedy', 'measure': 16.6},
+ {'category': 'r8', 'group': 'Comedy', 'measure': 14.11},
+ {'category': 'r9', 'group': 'Comedy', 'measure': 8.37},
+ {'category': 'r10', 'group': 'Comedy', 'measure': 15.99},
+ {'category': 'r1', 'group': 'Drama', 'measure': 6.01},
+ {'category': 'r2', 'group': 'Drama', 'measure': 3.77},
+ {'category': 'r3', 'group': 'Drama', 'measure': 4.33},
+ {'category': 'r4', 'group': 'Drama', 'measure': 6.0},
+ {'category': 'r5', 'group': 'Drama', 'measure': 9.24},
+ {'category': 'r6', 'group': 'Drama', 'measure': 12.92},
+ {'category': 'r7', 'group': 'Drama', 'measure': 16.48},
+ {'category': 'r8', 'group': 'Drama', 'measure': 15.19},
+ {'category': 'r9', 'group': 'Drama', 'measure': 9.85},
+ {'category': 'r10', 'group': 'Drama', 'measure': 16.77},
+ {'category': 'r1', 'group': 'Documentary', 'measure': 5.98},
+ {'category': 'r2', 'group': 'Documentary', 'measure': 2.56},
+ {'category': 'r3', 'group': 'Documentary', 'measure': 3.04},
+ {'category': 'r4', 'group': 'Documentary', 'measure': 3.85},
+ {'category': 'r5', 'group': 'Documentary', 'measure': 6.71},
+ {'category': 'r6', 'group': 'Documentary', 'measure': 10.07},
+ {'category': 'r7', 'group': 'Documentary', 'measure': 14.54},
+ {'category': 'r8', 'group': 'Documentary', 'measure': 16.47},
+ {'category': 'r9', 'group': 'Documentary', 'measure': 12.68},
+ {'category': 'r10', 'group': 'Documentary', 'measure': 24.68},
+ {'category': 'r1', 'group': 'Romance', 'measure': 5.65},
+ {'category': 'r2', 'group': 'Romance', 'measure': 3.87},
+ {'category': 'r3', 'group': 'Romance', 'measure': 4.5},
+ {'category': 'r4', 'group': 'Romance', 'measure': 6.0},
+ {'category': 'r5', 'group': 'Romance', 'measure': 9.51},
+ {'category': 'r6', 'group': 'Romance', 'measure': 13.53},
+ {'category': 'r7', 'group': 'Romance', 'measure': 17.04},
+ {'category': 'r8', 'group': 'Romance', 'measure': 15.29},
+ {'category': 'r9', 'group': 'Romance', 'measure': 9.52},
+ {'category': 'r10', 'group': 'Romance', 'measure': 16.19},
+ {'category': 'r1', 'group': 'Short', 'measure': 5.33},
+ {'category': 'r2', 'group': 'Short', 'measure': 2.53},
+ {'category': 'r3', 'group': 'Short', 'measure': 3.37},
+ {'category': 'r4', 'group': 'Short', 'measure': 4.9},
+ {'category': 'r5', 'group': 'Short', 'measure': 8.93},
+ {'category': 'r6', 'group': 'Short', 'measure': 12.96},
+ {'category': 'r7', 'group': 'Short', 'measure': 16.25},
+ {'category': 'r8', 'group': 'Short', 'measure': 14.99},
+ {'category': 'r9', 'group': 'Short', 'measure': 9.92},
+ {'category': 'r10', 'group': 'Short', 'measure': 20.87},     
+]
+;
+
+// set initial group value
+var group = "All";
+
+function datasetBarChosen(group) {
+	var ds = [];
+	for (x in datasetBarChart) {
+		 if(datasetBarChart[x].group==group){
+		 	ds.push(datasetBarChart[x]);
+		 } 
+		}
+	return ds;
+}
+
+
+function dsBarChartBasics() {
+
+		var margin = {top: 30, right: 5, bottom: 20, left: 50},
+		width = 500 - margin.left - margin.right,
+	   height = 250 - margin.top - margin.bottom,
+		colorBar = d3.scale.category20(),
+		barPadding = 1
+		;
+		
+		return {
+			margin : margin, 
+			width : width, 
+			height : height, 
+			colorBar : colorBar, 
+			barPadding : barPadding
+		}			
+		;
+}
+
+function dsBarChart() {
+
+	var firstDatasetBarChart = datasetBarChosen(group);         	
+	
+	var basics = dsBarChartBasics();
+	
+	var margin = basics.margin,
+			width = basics.width,
+ 		    height = basics.height,
+			colorBar = basics.colorBar,
+			barPadding = basics.barPadding
+			;
+					
+	var xScale = d3.scale.linear()
+			.domain([0, firstDatasetBarChart.length])
+			.range([0, width])
+			;
+						
+	
+	var yScale = d3.scale.linear()
+		   .domain([0, d3.max(firstDatasetBarChart, function(d) { return d.measure; })])
+		   .range([height, 0])
+		   ;
+	
+	//Create SVG element
+	
+	var svg = d3.select("#barChart")
+			.append("svg")
+		    .attr("width", width + margin.left + margin.right)
+		    .attr("height", height + margin.top + margin.bottom)
+		    .attr("id","barChartPlot")
+		    ;
+	
+	var plot = svg
+		    .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+		    ;
+	            
+	plot.selectAll("rect")
+		   .data(firstDatasetBarChart)
+		   .enter()
+		   .append("rect")
+			.attr("x", function(d, i) {
+			    return xScale(i);
+			})
+		   .attr("width", width / firstDatasetBarChart.length - barPadding)   
+			.attr("y", function(d) {
+			    return yScale(d.measure);
+			})  
+			.attr("height", function(d) {
+			    return height-yScale(d.measure);
+			})
+			.attr("fill", "lightgrey")
+			;
+	
+		
+	// Add y labels to plot	
+	
+	plot.selectAll("text")
+	.data(firstDatasetBarChart)
+	.enter()
+	.append("text")
+	.text(function(d) {
+			return formatAsInteger(d3.round(d.measure));
+			// return formatAsInteger(d.measure * 100);
+	})
+	.attr("text-anchor", "middle")
+	// Set x position to the left edge of each bar plus half the bar width
+	.attr("x", function(d, i) {
+			return (i * (width / firstDatasetBarChart.length)) + ((width / firstDatasetBarChart.length - barPadding) / 2);
+	})
+	.attr("y", function(d) {
+			return yScale(d.measure) + 14;
+	})
+	.attr("class", "yAxis")
+	;
+	
+	// Add x labels to chart	
+	
+	var xLabels = svg
+		    .append("g")
+		    .attr("transform", "translate(" + margin.left + "," + (margin.top + height)  + ")")
+		    ;
+	
+	xLabels.selectAll("text.xAxis")
+		  .data(firstDatasetBarChart)
+		  .enter()
+		  .append("text")
+		  .text(function(d) { return d.category;})
+		  .attr("text-anchor", "middle")
+				.attr("x", function(d, i) {
+		   		return (i * (width / firstDatasetBarChart.length)) + ((width / firstDatasetBarChart.length - barPadding) / 2);
+				})
+		  .attr("y", 15)
+		  .attr("class", "xAxis")
+		  ;			
+	 
+	// Title
+	
+	svg.append("text")
+		.attr("x", (width + margin.left + margin.right)/2)
+		.attr("y", 15)
+		.attr("class","title")				
+		.attr("text-anchor", "middle")
+		.text("Overall Rating Breakdown")
+		;
+}
+
+dsBarChart();
+
+ /* ** UPDATE CHART ** */
+ 
+/* updates bar chart on request */
+
+function updateBarChart(group, colorChosen) {
+	
+		var currentDatasetBarChart = datasetBarChosen(group);
+		
+		var basics = dsBarChartBasics();
+	
+		var margin = basics.margin,
+			width = basics.width,
+		   height = basics.height,
+			colorBar = basics.colorBar,
+			barPadding = basics.barPadding
+			;
+		
+		var 	xScale = d3.scale.linear()
+			.domain([0, currentDatasetBarChart.length])
+			.range([0, width])
+			;
+		
+			
+		var yScale = d3.scale.linear()
+	      .domain([0, d3.max(currentDatasetBarChart, function(d) { return d.measure; })])
+	      .range([height,0])
+	      ;
+	      
+	   var svg = d3.select("#barChart svg");
+	      
+	   var plot = d3.select("#barChartPlot")
+	   	.datum(currentDatasetBarChart)
+		   ;
+	
+	  		/* Note that here we only have to select the elements - no more appending! */
+	  	plot.selectAll("rect")
+	      .data(currentDatasetBarChart)
+	      .transition()
+			.duration(750)
+			.attr("x", function(d, i) {
+			    return xScale(i);
+			})
+		   .attr("width", width / currentDatasetBarChart.length - barPadding)   
+			.attr("y", function(d) {
+			    return yScale(d.measure);
+			})  
+			.attr("height", function(d) {
+			    return height-yScale(d.measure);
+			})
+			.attr("fill", colorChosen)
+			;
+		
+		plot.selectAll("text.yAxis") // target the text element(s) which has a yAxis class defined
+			.data(currentDatasetBarChart)
+			.transition()
+			.duration(750)
+		   .attr("text-anchor", "middle")
+		   .attr("x", function(d, i) {
+		   		return (i * (width / currentDatasetBarChart.length)) + ((width / currentDatasetBarChart.length - barPadding) / 2);
+		   })
+		   .attr("y", function(d) {
+		   		return yScale(d.measure) + 14;
+		   })
+		   .text(function(d) {
+				return formatAsInteger(d3.round(d.measure));
+		   })
+		   .attr("class", "yAxis")					 
+		;
+		
+
+		svg.selectAll("text.title") // target the text element(s) which has a title class defined
+			.attr("x", (width + margin.left + margin.right)/2)
+			.attr("y", 15)
+			.attr("class","title")				
+			.attr("text-anchor", "middle")
+			.text(group + "'s Rating Breakdown")
+		;
+}
+
+
+/*
+############# LINE CHART ##################
+-------------------------------------------
+*/
+
+var datasetLineChart = [
+ {'category': 1995, 'group': 'All', 'measure': 1248},
+ {'category': 1997, 'group': 'All', 'measure': 1568},
+ {'category': 1998, 'group': 'All', 'measure': 1705},
+ {'category': 1999, 'group': 'All', 'measure': 1927},
+ {'category': 2000, 'group': 'All', 'measure': 2048},
+ {'category': 2001, 'group': 'All', 'measure': 2121},
+ {'category': 2002, 'group': 'All', 'measure': 2168},
+ {'category': 2003, 'group': 'All', 'measure': 2158},
+ {'category': 2004, 'group': 'All', 'measure': 1945},
+ {'category': 1995, 'group': 'Action', 'measure': 161},
+ {'category': 1997, 'group': 'Action', 'measure': 162},
+ {'category': 1998, 'group': 'Action', 'measure': 144},
+ {'category': 1999, 'group': 'Action', 'measure': 160},
+ {'category': 2000, 'group': 'Action', 'measure': 154},
+ {'category': 2001, 'group': 'Action', 'measure': 169},
+ {'category': 2002, 'group': 'Action', 'measure': 176},
+ {'category': 2003, 'group': 'Action', 'measure': 180},
+ {'category': 2004, 'group': 'Action', 'measure': 147},
+ {'category': 1995, 'group': 'Animation', 'measure': 52},
+ {'category': 1997, 'group': 'Animation', 'measure': 49},
+ {'category': 1998, 'group': 'Animation', 'measure': 61},
+ {'category': 1999, 'group': 'Animation', 'measure': 85},
+ {'category': 2000, 'group': 'Animation', 'measure': 89},
+ {'category': 2001, 'group': 'Animation', 'measure': 82},
+ {'category': 2002, 'group': 'Animation', 'measure': 81},
+ {'category': 2003, 'group': 'Animation', 'measure': 94},
+ {'category': 2004, 'group': 'Animation', 'measure': 56},
+ {'category': 1995, 'group': 'Comedy', 'measure': 281},
+ {'category': 1997, 'group': 'Comedy', 'measure': 404},
+ {'category': 1998, 'group': 'Comedy', 'measure': 451},
+ {'category': 1999, 'group': 'Comedy', 'measure': 562},
+ {'category': 2000, 'group': 'Comedy', 'measure': 561},
+ {'category': 2001, 'group': 'Comedy', 'measure': 582},
+ {'category': 2002, 'group': 'Comedy', 'measure': 591},
+ {'category': 2003, 'group': 'Comedy', 'measure': 642},
+ {'category': 2004, 'group': 'Comedy', 'measure': 597},
+ {'category': 1995, 'group': 'Drama', 'measure': 493},
+ {'category': 1997, 'group': 'Drama', 'measure': 555},
+ {'category': 1998, 'group': 'Drama', 'measure': 634},
+ {'category': 1999, 'group': 'Drama', 'measure': 694},
+ {'category': 2000, 'group': 'Drama', 'measure': 793},
+ {'category': 2001, 'group': 'Drama', 'measure': 837},
+ {'category': 2002, 'group': 'Drama', 'measure': 929},
+ {'category': 2003, 'group': 'Drama', 'measure': 899},
+ {'category': 2004, 'group': 'Drama', 'measure': 805},
+ {'category': 1995, 'group': 'Documentary', 'measure': 84},
+ {'category': 1997, 'group': 'Documentary', 'measure': 133},
+ {'category': 1998, 'group': 'Documentary', 'measure': 133},
+ {'category': 1999, 'group': 'Documentary', 'measure': 156},
+ {'category': 2000, 'group': 'Documentary', 'measure': 175},
+ {'category': 2001, 'group': 'Documentary', 'measure': 196},
+ {'category': 2002, 'group': 'Documentary', 'measure': 249},
+ {'category': 2003, 'group': 'Documentary', 'measure': 261},
+ {'category': 2004, 'group': 'Documentary', 'measure': 258},
+ {'category': 1995, 'group': 'Romance', 'measure': 116},
+ {'category': 1997, 'group': 'Romance', 'measure': 161},
+ {'category': 1998, 'group': 'Romance', 'measure': 160},
+ {'category': 1999, 'group': 'Romance', 'measure': 184},
+ {'category': 2000, 'group': 'Romance', 'measure': 207},
+ {'category': 2001, 'group': 'Romance', 'measure': 211},
+ {'category': 2002, 'group': 'Romance', 'measure': 245},
+ {'category': 2003, 'group': 'Romance', 'measure': 215},
+ {'category': 2004, 'group': 'Romance', 'measure': 169},
+ {'category': 1995, 'group': 'Short', 'measure': 165},
+ {'category': 1997, 'group': 'Short', 'measure': 217},
+ {'category': 1998, 'group': 'Short', 'measure': 279},
+ {'category': 1999, 'group': 'Short', 'measure': 408},
+ {'category': 2000, 'group': 'Short', 'measure': 449},
+ {'category': 2001, 'group': 'Short', 'measure': 468},
+ {'category': 2002, 'group': 'Short', 'measure': 533},
+ {'category': 2003, 'group': 'Short', 'measure': 555},
+ {'category': 2004, 'group': 'Short', 'measure': 480}
+]
+;
+
+// set initial category value
+var group = "All";
+
+function datasetLineChartChosen(group) {
+	var ds = [];
+	for (x in datasetLineChart) {
+		 if(datasetLineChart[x].group==group){
+		 	ds.push(datasetLineChart[x]);
+		 } 
+		}
+	return ds;
+}
+
+function dsLineChartBasics() {
+
+	var margin = {top: 20, right: 10, bottom: 0, left: 50},
+	    width = 500 - margin.left - margin.right,
+	    height = 150 - margin.top - margin.bottom
+	    ;
+		
+		return {
+			margin : margin, 
+			width : width, 
+			height : height
+		}			
+		;
+}
+
+
+function dsLineChart() {
+
+	var firstDatasetLineChart = datasetLineChartChosen(group);    
+	
+	var basics = dsLineChartBasics();
+	
+	var margin = basics.margin,
+		width = basics.width,
+	   height = basics.height
+		;
+
+	var xScale = d3.scale.linear()
+	    .domain([0, firstDatasetLineChart.length-1])
+	    .range([0, width])
+	    ;
+
+	var yScale = d3.scale.linear()
+	    .domain([0, d3.max(firstDatasetLineChart, function(d) { return d.measure; })])
+	    .range([height, 0])
+	    ;
+	
+	var line = d3.svg.line()
+	    //.x(function(d) { return xScale(d.category); })
+	    .x(function(d, i) { return xScale(i); })
+	    .y(function(d) { return yScale(d.measure); })
+	    ;
+
+	// Define 'div' for tooltips
+	var div = d3.select("#lineChart")
+		.append("div")  // declare the tooltip div 
+		.attr("class", "tooltip")              // apply the 'tooltip' class
+		.style("opacity", 0);                  // set the opacity to nil
+	
+	var svg = d3.select("#lineChart").append("svg")
+	    .datum(firstDatasetLineChart)
+	    .attr("width", width + margin.left + margin.right)
+	    .attr("height", height + margin.top + margin.bottom)
+	    // create group and move it so that margins are respected (space for axis and title)
+	    
+	var plot = svg
+	    .append("g")
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+	    .attr("id", "lineChartPlot")
+	    ;
+
+	    
+	plot.append("path")
+	    .attr("class", "line")
+	    .attr("d", line)	
+	    // add color
+		.attr("stroke", "lightgrey")
+	    ;
+	  
+	plot.selectAll(".dot")
+	    .data(firstDatasetLineChart)
+	  	 .enter().append("circle")
+	    .attr("class", "dot")
+	    .attr("fill", "white")
+	    .attr("cx", line.x())
+	    .attr("cy", line.y())
+	    .attr("r", 3.5)
+	    .attr("stroke", "lightgrey")
+	    .append("title")
+	    .text(function(d) { return d.category + ": " + formatAsInteger(d.measure); })
+	    // Tooltip stuff after this
+	    .on("mouseover", function(d) {		
+            div.transition()
+				.duration(500)	
+				.style("opacity", 0);
+			div.transition()
+				.duration(200)	
+				.style("opacity", .9);	
+			div.html('<a href= "http://google.com">' + d.category + "</a>" + "<br/>"  + d.measure)	 
+				.style("left", (d3.event.pageX) + "px")			 
+				.style("top", (d3.event.pageY - 28) + "px");
+			})
+	    ;
+
+	svg.append("text")
+		.text("Ten years Trend")
+		.attr("id","lineChartTitle1")	
+		.attr("x",margin.left + ((width + margin.right)/2))
+		.attr("y", 10)
+		;
+
+}
+
+dsLineChart();
+
+
+ /* ** UPDATE CHART ** */
+ 
+/* updates bar chart on request */
+function updateLineChart(group, colorChosen) {
+
+	var currentDatasetLineChart = datasetLineChartChosen(group);   
+
+	var basics = dsLineChartBasics();
+	
+	var margin = basics.margin,
+		width = basics.width,
+	   height = basics.height
+		;
+
+	var xScale = d3.scale.linear()
+	    .domain([0, currentDatasetLineChart.length-1])
+	    .range([0, width])
+	    ;
+
+	var yScale = d3.scale.linear()
+	    .domain([0, d3.max(currentDatasetLineChart, function(d) { return d.measure; })])
+	    .range([height, 0])
+	    ;
+	
+	var line = d3.svg.line()
+    .x(function(d, i) { return xScale(i); })
+    .y(function(d) { return yScale(d.measure); })
+    ;
+
+   var plot = d3.select("#lineChartPlot")
+   	.datum(currentDatasetLineChart);
+	   
+	   
+	plot
+	.select("path")
+		.transition()
+		.duration(750)			    
+	   .attr("class", "line")
+	   .attr("d", line)	
+	   // add color
+		.attr("stroke", colorChosen)
+	   ;
+	   
+	var path = plot
+		.selectAll(".dot")
+	   .data(currentDatasetLineChart)
+	   .transition()
+		.duration(750)
+	   .attr("class", "dot")
+	   .attr("fill", "white")
+	   .attr("cx", line.x())
+	   .attr("cy", line.y())
+	   .attr("r", 3.5)
+		.attr("stroke", colorChosen)
+	   ;
+	   
+	   path
+	   .selectAll("title")
+	   .text(function(d) { return d.category + ": " + formatAsInteger(d.measure); })	 
+	   ;  
+
+}
+
+    </script>
+  </body>
+</html>
