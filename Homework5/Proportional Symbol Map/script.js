@@ -124,10 +124,10 @@ function symbolMap() {
             .attr("cx", function(d, i) {
                 // projection takes [longitude, latitude]
                 // and returns [x, y] as output
-                return projection([d.lon, d.lat])[0];
+                return projection([d.longitude, d.latitude])[0];
             })
             .attr("cy", function(d, i) {
-                return projection([d.lon, d.lat])[1];
+                return projection([d.longitude, d.latitude])[1];
             })
             .classed({"symbol": true})
             .on("mouseover", showHighlight)
@@ -262,16 +262,14 @@ function symbolMap() {
         });
 
         // highlight state associated with symbol
-        d3.select("g#states")
-            .select("path#state" + lookup[d.state])
-            .classed({
-                "highlight": true,
-                "state": true
-            });
+        // d3.select("g#states")
+        //     .select("path#state" + lookup[d.state])
+        //     .classed({
+        //         "highlight": true,
+        //         "state": true
+        //     });
 
-        updateLog(d.city + ", " + d.state +
-            " received an average of " + d.precip +
-            " inches of precipitation.");
+        updateLog(" Earthquake of " + d.mag + " located at " + d.place);
     }
 
     // called on mouseout

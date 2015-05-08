@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>    
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<script src="http://d3js.org/d3.v3.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- <title>MSAN 622 Information Visualization</title> -->
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+<style>
+
+
+#treemap {
+  position:absolute;
+  top:600px;
+  left:10px;
+  width: 960px;
+  height: 500px;
+  background: #ddd;
+}
+
+text {
+  pointer-events: none;
+}
+
+.grandparent text {
+  font-weight: bold;
+}
+
+rect {
+  fill: none;
+  stroke: #fff;
+}
+
+rect.parent,
+.grandparent rect {
+  stroke-width: 2px;
+}
+
+.grandparent rect {
+  fill: orange;
+}
+
+.grandparent:hover rect {
+  fill: #ee9700;
+}
+
+.children rect.parent,
+.grandparent rect {
+  cursor: pointer;
+}
+
+.children rect.parent {
+  fill: #bbb;
+  fill-opacity: .5;
+}
+
+.children:hover rect.child {
+  fill: #bbb;
+}
+
+</style>
+</head>
+
+
+<body>
+
+<!-- Fixed Navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MSN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#homework">Homework</a></li>
+                <li><a href="#project">Project</a></li>
+                <li><a href="#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Project Prototype</h1>
+        <p> Florian Burgos </p>
+    </div>
+</div>
+
+
+<div id="treemap"></div>
+
+
+<script>
+
+var margin = {top: 20, right: 0, bottom: 0, left: 0},
+    width = 960,
+    height = 500 - margin.top - margin.bottom,
+    formatNumber = d3.format(",d"),
+    transitioning;
+
+var x = d3.scale.linear()
+    .domain([0, width])
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .domain([0, height])
+    .range([0, height]);
+
+var treemap = d3.layout.treemap()
+    .children(function(d, depth) { return depth ? null : d._children; })
+    .sort(function(a, b) { return a.value - b.value; })
+    .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
+    .round(false);
+
+var svg = d3.select("#treemap").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.bottom + margin.top)
+    .style("margin-left", -margin.left + "px")
+    .style("margin.right", -margin.right + "px")
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .style("shape-rendering", "crispEdges");
+
+var grandparent = svg.append("g")
+    .attr("class", "grandparent");
+
+grandparent.append("rect")
+    .attr("y", -margin.top)
+    .attr("width", width)
+    .attr("height", margin.top);
+
+grandparent.append("text")
+    .attr("x", 6)
+    .attr("y", 6 - margin.top)
+    .attr("dy", ".75em");
+
+d3.json("flare.json", function(root) {
+  initialize(root);
+  accumulate(root);
+  layout(root);
+  display(root);
+
+  function initialize(root) {
+    root.x = root.y = 0;
+    root.dx = width;
+    root.dy = height;
+    root.depth = 0;
+  }
+
+  // Aggregate the values for internal nodes. This is normally done by the
+  // treemap layout, but not here because of our custom implementation.
+  // We also take a snapshot of the original children (_children) to avoid
+  // the children being overwritten when when layout is computed.
+  function accumulate(d) {
+    return (d._children = d.children)
+        ? d.value = d.children.reduce(function(p, v) { return p + accumulate(v); }, 0)
+        : d.value;
+  }
+
+  // Compute the treemap layout recursively such that each group of siblings
+  // uses the same size (1×1) rather than the dimensions of the parent cell.
+  // This optimizes the layout for the current zoom state. Note that a wrapper
+  // object is created for the parent node for each group of siblings so that
+  // the parent’s dimensions are not discarded as we recurse. Since each group
+  // of sibling was laid out in 1×1, we must rescale to fit using absolute
+  // coordinates. This lets us use a viewport to zoom.
+  function layout(d) {
+    if (d._children) {
+      treemap.nodes({_children: d._children});
+      d._children.forEach(function(c) {
+        c.x = d.x + c.x * d.dx;
+        c.y = d.y + c.y * d.dy;
+        c.dx *= d.dx;
+        c.dy *= d.dy;
+        c.parent = d;
+        layout(c);
+      });
+    }
+  }
+
+  function display(d) {
+    grandparent
+        .datum(d.parent)
+        .on("click", transition)
+      .select("text")
+        .text(name(d));
+
+    var g1 = svg.insert("g", ".grandparent")
+        .datum(d)
+        .attr("class", "depth");
+
+    var g = g1.selectAll("g")
+        .data(d._children)
+      .enter().append("g");
+
+    g.filter(function(d) { return d._children; })
+        .classed("children", true)
+        .on("click", transition);
+
+    g.selectAll(".child")
+        .data(function(d) { return d._children || [d]; })
+      .enter().append("rect")
+        .attr("class", "child")
+        .call(rect);
+
+    g.append("rect")
+        .attr("class", "parent")
+        .call(rect)
+      .append("title")
+        .text(function(d) { return formatNumber(d.value); });
+
+    g.append("text")
+        .attr("dy", ".75em")
+        .text(function(d) { return d.name; })
+        .call(text);
+
+    function transition(d) {
+      if (transitioning || !d) return;
+      transitioning = true;
+
+      var g2 = display(d),
+          t1 = g1.transition().duration(750),
+          t2 = g2.transition().duration(750);
+
+      // Update the domain only after entering new elements.
+      x.domain([d.x, d.x + d.dx]);
+      y.domain([d.y, d.y + d.dy]);
+
+      // Enable anti-aliasing during the transition.
+      svg.style("shape-rendering", null);
+
+      // Draw child nodes on top of parent nodes.
+      svg.selectAll(".depth").sort(function(a, b) { return a.depth - b.depth; });
+
+      // Fade-in entering text.
+      g2.selectAll("text").style("fill-opacity", 0);
+
+      // Transition to the new view.
+      t1.selectAll("text").call(text).style("fill-opacity", 0);
+      t2.selectAll("text").call(text).style("fill-opacity", 1);
+      t1.selectAll("rect").call(rect);
+      t2.selectAll("rect").call(rect);
+
+      // Remove the old node when the transition is finished.
+      t1.remove().each("end", function() {
+        svg.style("shape-rendering", "crispEdges");
+        transitioning = false;
+      });
+    }
+
+    return g;
+  }
+
+  function text(text) {
+    text.attr("x", function(d) { return x(d.x) + 6; })
+        .attr("y", function(d) { return y(d.y) + 6; });
+  }
+
+  function rect(rect) {
+    rect.attr("x", function(d) { return x(d.x); })
+        .attr("y", function(d) { return y(d.y); })
+        .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
+        .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
+  }
+
+  function name(d) {
+    return d.parent
+        ? name(d.parent) + "." + d.name
+        : d.name;
+  }
+});
+
+</script>
+
+
+<div class="container">
+<p>Dataset Summary</p>
+  <ul style ="font-size:12px">
+    <li> The dataset is a list of companies in the S&P 500 (Standard and Poor's 500). The S&P 500 is a capitalization-weighted index of the top 500 publicly listed stocks in the US (top 500 by market capitalization). The dataset includes a list of all the stocks contained therein and associated key financials such as price, market capitalization, earnings, etc. <br>
+    The dataset is free and can be obtained from the Standard and Poor's official website (registration is a pre-requisite). </li>
+    <li>Type of data in the dataset: Numerical (market cap), Categorical (Sector, Name). </li>
+    <li>The objective here is to see if by applying some of the concepts we learned in the class we can somehow represent how important is a sector. For example, is Technology more important than Finance in terms of Market Capitalization? </li>
+  </ul>
+<p>Sketch Summary</p>
+  <ul style ="font-size:12px">
+    <li>The treemap gives the user the ability to quickly vizualize the most important sector in the US economy. You can, for example see the predominance of the technology sector nowadays in the US economy. </li>
+    <li>Then by zooming in a sector, you will see the leader in this industry.<br>
+    What will be hard to do is to compare companies accross industries...  </li>
+  </ul>
+<p>Vizualization Prototype</p>
+  
+</div>
+
+</body>
+</html>
