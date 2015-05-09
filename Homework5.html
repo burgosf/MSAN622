@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Symbol Map Demo</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <!-- load D3 and TopoJSON //-->
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+
+    <!-- load custom CSS and JavaScript //-->
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+
+    <style type="text/css">
+
+    #block {    
+        position:absolute;
+        top:730px;
+        left:10px;
+        width:400px;
+        height: 400px; 
+    }
+    </style>
+
+ </head>
+
+<body>
+
+<!-- Fixed Navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MSN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#homework">Homework</a></li>
+                <li><a href="#project">Project</a></li>
+                <li><a href="#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Homework 5</h1>
+        <p> Florian Burgos </p>
+    </div>
+</div>
+
+<div id="block">
+<svg id="map" width="940" height="480"></svg>
+<p id="log">Loading map... please wait.</p>
+</div>
+
+<script>
+/*
+ * For sample TopoJSON files, go to:
+ * https://gist.github.com/mbostock/4090846
+ */
+var base = "https://gist.githubusercontent.com/mbostock/4090846/raw/";
+var url = {
+    world: base + "world-50m.json",
+    earthquakes: "4.5_month.csv",
+    countries: "world-country-names.tsv"
+    // states:  base + "world-country-names.tsv",
+    // precip:  "usprecip.json" // relative URL
+};
+
+// Uses reusable chart model
+// See http://bost.ocks.org/mike/chart/
+var chart = symbolMap();
+
+// Update how we access data (need the precip property)
+chart = chart.value(function(d) { return d.mag; });
+
+// Nested calls to trigger drawing in proper order
+d3.json(url.world, function(mapError, mapJSON) {
+    if (processError(mapError)) return;
+
+    // update map data
+    chart = chart.map(mapJSON);
+
+    // Wait until the map is drawn before loading
+    // and drawing the data values
+    d3.csv(url.earthquakes, function(dataError, dataJSON) {
+        if (processError(dataError)) return;
+
+        chart = chart.values(dataJSON);
+        chart("map");
+    });
+});
+
+// Load state lookup information
+// Possible some lookups will fail until this loads
+d3.tsv(url.countries, parseCountryName, function(error, data) {
+        if (processError(error)) return;
+        chart = chart.lookup(data);
+    }
+);
+
+</script>
+
+<div class="container">
+<p>Functionalities</p>
+  <ul style ="font-size:12px">
+    <li> Basic Functionality: <br>
+    I choose the built-in projection d3.geo.mercator().<br> 
+    The text at the bottom has been changed and display a different information.</li>
+    <li> Moderate Functionality: <br>
+    The color of the circle changes depending on the depth of the earthquake. Color goes from red (low depth) to blue (high depth).</li>
+  </ul>
+  <p>Source code</p>
+  <ul style ="font-size:12px">
+    <li> You can find the source code <a href="https://github.com/burgosf/MSAN622/blob/gh-pages/Homework5/script.js">here</a>. </li>
+  </ul>
+
+
+</div>
+
+</body>
+</html>
