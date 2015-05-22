@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html>
+<head>    
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<script src="http://d3js.org/d3.v3.js"></script>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- <title>MSAN 622 Information Visualization</title> -->
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-theme.min.css" rel="stylesheet">
+
+<style>
+
+
+#treemap {
+  position:absolute;
+  top:1000px;
+  left:10px;
+  width: 900px;
+  height: 500px;
+  background: #fff;
+}
+
+.text {
+  pointer-events: none;
+}
+
+.grandparent text {
+  font-weight: bold;
+}
+
+.rect {
+  fill: none;
+  stroke: #fff;
+}
+
+.rect.parent,
+.grandparent rect {
+  stroke-width: 2px;
+}
+
+.grandparent rect {
+  fill: lightgrey;
+}
+
+.grandparent:hover rect {
+  fill: #ee9700;
+}
+
+.children rect.parent,
+.grandparent rect {
+  cursor: pointer;
+}
+
+.children rect.parent {
+  fill: #bbb;
+  fill-opacity: .5;
+}
+
+.children:hover rect.child {
+  fill: #bbb;
+}
+
+
+#dashboard {
+    max-width: 1000px;
+}
+#dashTitle {
+    font-family: sans-serif;
+    font-size: 24px;
+}
+svg {
+    float: left;
+}
+.text {
+    font-family: sans-serif;
+    font-size: 10px;
+}
+/*.tick text {
+    font-family: sans-serif;
+    font-size: 10px;
+}*/
+
+/*.y.axis text{
+    font-family: sans-serif;
+    font-size: 10px;
+}*/
+#barChart{
+  position:absolute;
+  top:1240px;
+  left:950px;
+  width: 300px;
+  height: 300px;
+  background: #fff;
+} 
+/*.x.axis .tick text {
+    font-size: 12px;
+}*/
+
+
+#lineChart{
+  position:absolute;
+  top:1035px;
+  left:950px;
+  width: 300px;
+  height: 150px;
+  background: #fff;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: none;
+  stroke-width: 0.5px;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  stroke: black;
+}
+.y.axis path {
+  stroke: black;
+}
+
+.line {
+  fill: none;
+  /*stroke: lightgrey;*/
+  stroke-width: 2.0px;
+}
+div.tooltip {
+  position: absolute; 
+  text-align: center; 
+  width: 60px;  
+  height: 28px;   
+  padding: 2px; 
+  font: 12px sans-serif;  
+  background: lightgrey;  
+  border: 0px;          
+  border-radius: 8px;
+}
+
+
+
+</style>
+</head>
+<body>
+
+<!-- Fixed Navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle Navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">MSN 622</a>
+        </div>
+
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a href="#homework">Homework</a></li>
+                <li><a href="#project">Project</a></li>
+                <li><a href="#participation">Participation</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div><!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="jumbotron">
+    <div class="container">
+        <h1>Final Project</h1>
+        <p> Florian Burgos </p>
+    </div>
+</div>
+
+<div id="dashboard">
+<svg id="treemap"></svg>
+<div id="barChart"></div>  
+<div id="lineChart"></div>
+</div>
+
+
+<script>
+
+
+function treemap(){
+	var margin = {top: 20, right: 0, bottom: 0, left: 0},
+    width = 900,
+    height = 500 - margin.top - margin.bottom,
+    formatNumber = d3.format(",d"),
+    color = d3.scale.category20(),
+    transitioning;
+
+var x = d3.scale.linear()
+    .domain([0, width])
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .domain([0, height])
+    .range([0, height]);
+
+var treemap = d3.layout.treemap()
+    .children(function(d, depth) { return depth ? null : d._children; })
+    .sort(function(a, b) { return a.value - b.value; })
+    .ratio(height / width * 0.5 * (1 + Math.sqrt(5)))
+    .round(false);
+
+var svg = d3.select("#treemap").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.bottom + margin.top)
+    .style("margin-left", -margin.left + "px")
+    .style("margin.right", -margin.right + "px")
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+    .style("shape-rendering", "crispEdges");
+
+var grandparent = svg.append("g")
+    .attr("class", "grandparent");
+
+grandparent.append("rect")
+    .attr("y", -margin.top)
+    .attr("width", width)
+    .attr("height", margin.top);
+
+grandparent.append("text")
+    .attr("x", 6)
+    .attr("y", 6 - margin.top)
+    .attr("dy", ".75em");
+
+d3.json("flare.json", function(root) {
+  initialize(root);
+  accumulate(root);
+  layout(root);
+  display(root);
+
+  function initialize(root) {
+    root.x = root.y = 0;
+    root.dx = width;
+    root.dy = height;
+    root.depth = 0;
+  }
+
+  // Aggregate the values for internal nodes. This is normally done by the
+  // treemap layout, but not here because of our custom implementation.
+  // We also take a snapshot of the original children (_children) to avoid
+  // the children being overwritten when when layout is computed.
+  function accumulate(d) {
+    return (d._children = d.children)
+        ? d.value = d.children.reduce(function(p, v) { return p + accumulate(v); }, 0)
+        : d.value;
+  }
+
+  // Compute the treemap layout recursively such that each group of siblings
+  // uses the same size (1×1) rather than the dimensions of the parent cell.
+  // This optimizes the layout for the current zoom state. Note that a wrapper
+  // object is created for the parent node for each group of siblings so that
+  // the parent’s dimensions are not discarded as we recurse. Since each group
+  // of sibling was laid out in 1×1, we must rescale to fit using absolute
+  // coordinates. This lets us use a viewport to zoom.
+  function layout(d) {
+    if (d._children) {
+      treemap.nodes({_children: d._children});
+      d._children.forEach(function(c) {
+        c.x = d.x + c.x * d.dx;
+        c.y = d.y + c.y * d.dy;
+        c.dx *= d.dx;
+        c.dy *= d.dy;
+        c.parent = d;
+        layout(c);
+      });
+    }
+  }
+
+  function display(d) {
+    grandparent
+        .datum(d.parent)
+        .on("click", transition)
+      .select("text")
+        .text(name(d));
+
+    var g1 = svg.insert("g", ".grandparent")
+        .datum(d)
+        .attr("class", "depth");
+
+    var g = g1.selectAll("g")
+        .data(d._children)
+      .enter().append("g");
+
+    g.filter(function(d) { return d._children; })
+        .classed("children", true)
+        .on("click", transition);
+
+    g.selectAll(".child")
+        .data(function(d) { return d._children || [d]; })
+      .enter().append("rect")
+        .attr("class", "child")
+        .call(rect);
+
+    g.append("rect")
+        .attr("class", "parent")
+        .call(rect)
+        .style("fill", function(d) { return color(d.name); })
+      .append("title")
+        .text(function(d) { return formatNumber(d.value); });
+
+    g.append("text")
+        .attr("dy", ".75em")
+        .text(function(d) { return d.name; })
+        .call(text);
+
+    
+    function transition(d) {
+      if (transitioning || !d) return;
+      transitioning = true;
+
+      // console.log(d.name);
+
+      var g2 = display(d),
+          t1 = g1.transition().duration(500),
+          t2 = g2.transition().duration(500);
+
+      // Update the domain only after entering new elements.
+      x.domain([d.x, d.x + d.dx]);
+      y.domain([d.y, d.y + d.dy]);
+
+      // Enable anti-aliasing during the transition.
+      svg.style("shape-rendering", null);
+
+      // Draw child nodes on top of parent nodes.
+      svg.selectAll(".depth").sort(function(a, b) { return a.depth - b.depth; });
+
+      // Fade-in entering text.
+      g2.selectAll("text").style("fill-opacity", 0);
+
+      // Transition to the new view.
+      t1.selectAll("text").call(text).style("fill-opacity", 0);
+      t2.selectAll("text").call(text).style("fill-opacity", 1);
+      t1.selectAll("rect").call(rect);
+      t2.selectAll("rect").call(rect);
+
+      updateBarChart(d.name, color(d.name));
+      updateLineChart(d.name, color(d.name));
+
+      // Remove the old node when the transition is finished.
+      t1.remove().each("end", function() {
+        svg.style("shape-rendering", "crispEdges");
+        transitioning = false;
+      });
+    }
+    return g;
+  }
+
+  
+  function text(text) {
+    text.attr("x", function(d) { return x(d.x) + 6; })
+        .attr("y", function(d) { return y(d.y) + 10; })
+        .style("opacity", function (d) { d.w = this.getComputedTextLength(); return (x(d.x + d.dx) - x(d.x)) > d.w ? 1 : 0; })
+    var bbox = text.node().getBBox();
+    // console.log(bbox);
+  }
+
+  function rect(rect) {
+    rect.attr("x", function(d) { return x(d.x); })
+        .attr("y", function(d) { return y(d.y); })
+        .attr("width", function(d) { return x(d.x + d.dx) - x(d.x); })
+        .attr("height", function(d) { return y(d.y + d.dy) - y(d.y); });
+  }
+
+  function name(d) {
+    return d.parent
+        ? name(d.parent) + "." + d.name
+        : d.name;
+  }
+});
+
+
+}
+
+treemap();
+
+
+/*
+############# LINE CHART ##################
+-------------------------------------------
+*/
+
+var datasetLineChart = [
+ {'category': '2015-05-01', 'group': 'Information Technology', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Information Technology', 'measure': 98.05},
+ {'category': '2015-05-05', 'group': 'Information Technology', 'measure': 97.74},
+ {'category': '2015-05-06', 'group': 'Information Technology', 'measure': 98.47},
+ {'category': '2015-05-07', 'group': 'Information Technology', 'measure': 97.88},
+ {'category': '2015-05-08', 'group': 'Information Technology', 'measure': 96.95},
+ {'category': '2015-05-01', 'group': 'Industrials', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Industrials', 'measure': 100.16},
+ {'category': '2015-05-05', 'group': 'Industrials', 'measure': 100.07},
+ {'category': '2015-05-06', 'group': 'Industrials', 'measure': 98.04},
+ {'category': '2015-05-07', 'group': 'Industrials', 'measure': 99.16},
+ {'category': '2015-05-08', 'group': 'Industrials', 'measure': 98.7},
+ {'category': '2015-05-01', 'group': 'Energy', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Energy', 'measure': 101.81},
+ {'category': '2015-05-05', 'group': 'Energy', 'measure': 101.73},
+ {'category': '2015-05-06', 'group': 'Energy', 'measure': 102.35},
+ {'category': '2015-05-07', 'group': 'Energy', 'measure': 102.05},
+ {'category': '2015-05-08', 'group': 'Energy', 'measure': 100.22},
+ {'category': '2015-05-01', 'group': 'Consumer Discretionary', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Consumer Discretionary', 'measure': 100.64},
+ {'category': '2015-05-05', 'group': 'Consumer Discretionary', 'measure': 100.32},
+ {'category': '2015-05-06', 'group': 'Consumer Discretionary', 'measure': 99.35},
+ {'category': '2015-05-07', 'group': 'Consumer Discretionary', 'measure': 100.65},
+ {'category': '2015-05-08', 'group': 'Consumer Discretionary', 'measure': 100.41},
+ {'category': '2015-05-01', 'group': 'Utilities', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Utilities', 'measure': 101.18},
+ {'category': '2015-05-05', 'group': 'Utilities', 'measure': 101.55},
+ {'category': '2015-05-06', 'group': 'Utilities', 'measure': 101.84},
+ {'category': '2015-05-07', 'group': 'Utilities', 'measure': 100.52},
+ {'category': '2015-05-08', 'group': 'Utilities', 'measure': 102.07},
+ {'category': '2015-05-01', 'group': 'Materials', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Materials', 'measure': 100.18},
+ {'category': '2015-05-05', 'group': 'Materials', 'measure': 101.46},
+ {'category': '2015-05-06', 'group': 'Materials', 'measure': 101.88},
+ {'category': '2015-05-07', 'group': 'Materials', 'measure': 101.26},
+ {'category': '2015-05-08', 'group': 'Materials', 'measure': 102.91},
+ {'category': '2015-05-01', 'group': 'Telecommunication Services', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Telecommunication Services', 'measure': 100.42},
+ {'category': '2015-05-05', 'group': 'Telecommunication Services', 'measure': 99.98},
+ {'category': '2015-05-06', 'group': 'Telecommunication Services', 'measure': 100.19},
+ {'category': '2015-05-07', 'group': 'Telecommunication Services', 'measure': 99.62},
+ {'category': '2015-05-08', 'group': 'Telecommunication Services', 'measure': 98.61},
+ {'category': '2015-05-01', 'group': 'Consumer Staples', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Consumer Staples', 'measure': 101.6},
+ {'category': '2015-05-05', 'group': 'Consumer Staples', 'measure': 101.23},
+ {'category': '2015-05-06', 'group': 'Consumer Staples', 'measure': 101.31},
+ {'category': '2015-05-07', 'group': 'Consumer Staples', 'measure': 101.48},
+ {'category': '2015-05-08', 'group': 'Consumer Staples', 'measure': 101.37},
+ {'category': '2015-05-01', 'group': 'Financials', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Financials', 'measure': 99.05},
+ {'category': '2015-05-05', 'group': 'Financials', 'measure': 99.29},
+ {'category': '2015-05-06', 'group': 'Financials', 'measure': 99.29},
+ {'category': '2015-05-07', 'group': 'Financials', 'measure': 100.16},
+ {'category': '2015-05-08', 'group': 'Financials', 'measure': 101.76},
+ {'category': '2015-05-01', 'group': 'Health Care', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'Health Care', 'measure': 101.62},
+ {'category': '2015-05-05', 'group': 'Health Care', 'measure': 101.5},
+ {'category': '2015-05-06', 'group': 'Health Care', 'measure': 102.09},
+ {'category': '2015-05-07', 'group': 'Health Care', 'measure': 101.55},
+ {'category': '2015-05-08', 'group': 'Health Care', 'measure': 102.53},
+ {'category': '2015-05-01', 'group': 'S&P500', 'measure': 100.0},
+ {'category': '2015-05-04', 'group': 'S&P500', 'measure': 100.47},
+ {'category': '2015-05-05', 'group': 'S&P500', 'measure': 100.49},
+ {'category': '2015-05-06', 'group': 'S&P500', 'measure': 100.48},
+ {'category': '2015-05-07', 'group': 'S&P500', 'measure': 100.43},
+ {'category': '2015-05-08', 'group': 'S&P500', 'measure': 100.55},
+]
+;
+
+// set initial category value
+var group = "S&P500";
+
+function datasetLineChartChosen(group) {
+  var ds = [];
+  for (x in datasetLineChart) {
+     if(datasetLineChart[x].group==group){
+      ds.push(datasetLineChart[x]);
+     } 
+    }
+  return ds;
+}
+
+function dsLineChartBasics() {
+
+  var margin = {top: 40, right: 10, bottom: 15, left: 10},
+      width = 300 - margin.left - margin.right,
+      height = 125 - margin.top - margin.bottom
+      ;
+    
+    return {
+      margin : margin, 
+      width : width, 
+      height : height
+    }     
+    ;
+}
+
+
+function dsLineChart() {
+
+  var firstDatasetLineChart = datasetLineChartChosen(group);    
+  
+  var basics = dsLineChartBasics();
+
+  // var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+  // firstDatasetLineChart.forEach(function(d) {
+  //   d.category = parseDate(d.category);
+  // });
+  
+  var margin = basics.margin,
+    width = basics.width,
+     height = basics.height
+    ;
+
+  var xScale = d3.scale.linear()
+  // var xScale = d3.time.scale()
+      // .domain([d3.min(firstDatasetLineChart, function(d) { return d.category; }), d3.max(firstDatasetLineChart, function(d) { return d.category; })])
+      .domain([0, firstDatasetLineChart.length-1])
+      .range([0, width])
+      ;
+
+  var yScale = d3.scale.linear()
+      .domain([d3.min(firstDatasetLineChart, function(d) { return d.measure; }), d3.max(firstDatasetLineChart, function(d) { return d.measure; })])
+      .range([height, 0])
+      ;
+
+  // console.log(yScale.domain());
+  // console.log(xScale.domain());
+  
+  var line = d3.svg.line()
+      // .x(function(d) { return xScale(d.category); })
+      .x(function(d, i) { return xScale(i); })
+      .y(function(d) { return yScale(d.measure); })
+      ;
+
+  
+  var svg = d3.select("#lineChart").append("svg")
+      .datum(firstDatasetLineChart)
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      
+
+  var plot = svg
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+      .attr("id", "lineChartPlot")
+      ;
+
+  
+      
+  plot.append("path")
+      .attr("class", "line")
+      .attr("d", line)  
+      // add color
+    .attr("stroke", "lightgrey");
+    
+  plot.selectAll(".dot")
+      .data(firstDatasetLineChart)
+       .enter().append("circle")
+      .attr("class", "dot")
+      .attr("fill", "white")
+      .attr("cx", line.x())
+      .attr("cy", line.y())
+      .attr("r", 3.5)
+      .attr("stroke", "lightgrey")
+      .append("title")
+    ;
+
+
+  svg.append("text")
+    .text("Weekly Performance")
+    .attr("id","lineChartTitle1") 
+    .attr("x", 70)
+    .attr("y", 15)
+    ;
+
+}
+
+dsLineChart();
+
+function updateLineChart(group, colorChosen) {
+
+  // console.log(group);
+  // console.log(colorChosen);
+
+  var currentDatasetLineChart = datasetLineChartChosen(group);   
+
+  var basics = dsLineChartBasics();
+
+  // var parseDate = d3.time.format("%Y-%m-%d").parse;
+
+  // currentDatasetLineChart.forEach(function(d) {
+  //   d.category = parseDate(d.category);
+  // });
+  
+  var margin = basics.margin,
+    width = basics.width,
+     height = basics.height
+    ;
+
+  var xScale = d3.scale.linear()
+      .domain([0, currentDatasetLineChart.length-1])
+      .range([0, width])
+      ;
+
+  var yScale = d3.scale.linear()
+      .domain([d3.min(currentDatasetLineChart, function(d) { return d.measure; }), d3.max(currentDatasetLineChart, function(d) { return d.measure; })])
+      .range([height, 0])
+      ;
+
+  
+  var line = d3.svg.line()
+    // .x(function(d) { return xScale(d.category); })
+    .x(function(d, i) { return xScale(i); })
+    .y(function(d) { return yScale(d.measure); })
+    ;
+
+  // var div = d3.select("#lineChartPlot")
+  //   .append("div")  // declare the tooltip div 
+  //   .attr("class", "tooltip")              // apply the 'tooltip' class
+  //   .style("opacity", 0);     
+
+   var plot = d3.select("#lineChartPlot")
+    .datum(currentDatasetLineChart);
+     
+     
+  plot.select("path")
+    .transition()
+    .duration(500)          
+    .attr("class", "line")
+    .attr("d", line) 
+     // add color
+    .attr("stroke", colorChosen);
+     
+  var path = plot
+    .selectAll(".dot")
+     .data(currentDatasetLineChart)
+     .transition()
+    .duration(500)
+     .attr("class", "dot")
+     .attr("fill", "white")
+     .attr("cx", line.x())
+     .attr("cy", line.y())
+     .attr("r", 3.5)
+    .attr("stroke", colorChosen)
+    ;
+     
+  // svg.append("text")
+  //   .text(group + " Weekly Performance")
+  //   .attr("id","lineChartTitle1") 
+  //   .attr("x", margin.right + margin.left)
+  //   .at
+
+}
+
+
+/*
+############# BAR CHART ###################
+-------------------------------------------
+*/
+
+
+
+var datasetBarChart = [
+ {'category': 'SWKS', 'group': 'Information Technology', 'measure': 0.0473},
+ {'category': 'TDC', 'group': 'Information Technology', 'measure': 0.0751},
+ {'category': 'NVDA', 'group': 'Information Technology', 'measure': 0.0797},
+ {'category': 'CSX', 'group': 'Industrials', 'measure': 0.0339},
+ {'category': 'FAST', 'group': 'Industrials', 'measure': 0.0363},
+ {'category': 'AAL', 'group': 'Industrials', 'measure': 0.0413},
+ {'category': 'OKE', 'group': 'Energy', 'measure': 0.0694},
+ {'category': 'NE', 'group': 'Energy', 'measure': 0.0707},
+ {'category': 'CHK', 'group': 'Energy', 'measure': 0.0774},
+ {'category': 'PCLN', 'group': 'Consumer Discretionary', 'measure': 0.0417},
+ {'category': 'NWSA', 'group': 'Consumer Discretionary', 'measure': 0.0687},
+ {'category': 'FOSL', 'group': 'Consumer Discretionary', 'measure': 0.0723},
+ {'category': 'FE', 'group': 'Utilities', 'measure': 0.0379},
+ {'category': 'WEC', 'group': 'Utilities', 'measure': 0.0392},
+ {'category': 'GAS', 'group': 'Utilities', 'measure': 0.0401},
+ {'category': 'MWV', 'group': 'Materials', 'measure': 0.0275},
+ {'category': 'VMC', 'group': 'Materials', 'measure': 0.0304},
+ {'category': 'IP', 'group': 'Materials', 'measure': 0.0548},
+ {'category': 'T', 'group': 'Telecommunication Services', 'measure': 0.024},
+ {'category': 'CTL',  'group': 'Telecommunication Services',  'measure': 0.0284},
+ {'category': 'FTR',  'group': 'Telecommunication Services',  'measure': 0.1347},
+ {'category': 'GMCR', 'group': 'Consumer Staples', 'measure': 0.1011},
+ {'category': 'WFM', 'group': 'Consumer Staples', 'measure': 0.108},
+ {'category': 'MNST', 'group': 'Consumer Staples', 'measure': 0.1169},
+ {'category': 'VNO', 'group': 'Financials', 'measure': 0.0383},
+ {'category': 'ALL', 'group': 'Financials', 'measure': 0.04},
+ {'category': 'GNW', 'group': 'Financials', 'measure': 0.059},
+ {'category': 'VRTX', 'group': 'Health Care', 'measure': 0.034},
+ {'category': 'CERN', 'group': 'Health Care', 'measure': 0.0475},
+ {'category': 'ALXN', 'group': 'Health Care', 'measure': 0.0873},
+ {'category': 'WFM', 'group': 'S&P500', 'measure': 0.108},
+ {'category': 'MNST', 'group': 'S&P500', 'measure': 0.1169},
+ {'category': 'FTR', 'group': 'S&P500', 'measure': 0.1347},     
+]
+;
+
+// set initial group value
+var group = "S&P500";
+
+function datasetBarChosen(group) {
+  var ds = [];
+  for (x in datasetBarChart) {
+     if(datasetBarChart[x].group==group){
+      ds.push(datasetBarChart[x]);
+     } 
+    }
+  return ds;
+}
+
+
+function dsBarChartBasics() {
+
+    var margin = {top: 30, right: 5, bottom: 20, left: 30},
+    width = 300 - margin.left - margin.right,
+     height = 250 - margin.top - margin.bottom,
+    colorBar = d3.scale.category20(),
+    barPadding = 1
+    ;
+    
+    return {
+      margin : margin, 
+      width : width, 
+      height : height, 
+      colorBar : colorBar, 
+      barPadding : barPadding
+    }     
+    ;
+}
+
+function dsBarChart() {
+
+  var firstDatasetBarChart = datasetBarChosen(group);           
+  
+  var basics = dsBarChartBasics();
+  
+  var margin = basics.margin,
+      width = basics.width,
+        height = basics.height,
+      colorBar = basics.colorBar,
+      barPadding = basics.barPadding
+      ;
+          
+  var xScale = d3.scale.linear()
+      .domain([0, firstDatasetBarChart.length])
+      .range([0, width])
+      ;
+            
+  
+  var yScale = d3.scale.linear()
+       .domain([0, d3.max(firstDatasetBarChart, function(d) { return d.measure; })])
+       .range([height, 0])
+       ;
+  
+  //Create SVG element
+  
+  var svg = d3.select("#barChart")
+      .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .attr("id","barChartPlot")
+        ;
+  
+  var plot = svg
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        ;
+              
+  plot.selectAll("rect")
+       .data(firstDatasetBarChart)
+       .enter()
+       .append("rect")
+      .attr("x", function(d, i) {
+          return xScale(i);
+      })
+       .attr("width", width / firstDatasetBarChart.length - barPadding)   
+      .attr("y", function(d) {
+          return yScale(d.measure);
+      })  
+      .attr("height", function(d) {
+          return height-yScale(d.measure);
+      })
+      .attr("fill", "lightgrey")
+      ;
+  
+    
+  // Add y labels to plot 
+  
+  plot.selectAll("text")
+  .data(firstDatasetBarChart)
+  .enter()
+  .append("text")
+  .text(function(d) {
+      return d3.round(100*d.measure, 2);
+      // return formatAsInteger(d.measure * 100);
+  })
+  .attr("text-anchor", "middle")
+  // Set x position to the left edge of each bar plus half the bar width
+  .attr("x", function(d, i) {
+      return (i * (width / firstDatasetBarChart.length)) + ((width / firstDatasetBarChart.length - barPadding) / 2);
+  })
+  .attr("y", function(d) {
+      return yScale(d.measure) + 14;
+  })
+  .attr("class", "yAxis")
+  ;
+  
+  // Add x labels to chart  
+  
+  var xLabels = svg
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + (margin.top + height)  + ")")
+        ;
+  
+  xLabels.selectAll("text.xAxis")
+      .data(firstDatasetBarChart)
+      .enter()
+      .append("text")
+      .text(function(d) { return d.category;})
+      .attr("text-anchor", "middle")
+        .attr("x", function(d, i) {
+          return (i * (width / firstDatasetBarChart.length)) + ((width / firstDatasetBarChart.length - barPadding) / 2);
+        })
+      .attr("y", 15)
+      .attr("class", "xAxis")
+      ;     
+   
+  // Title
+  
+  svg.append("text")
+    .attr("x", (width + margin.left + margin.right)/2)
+    .attr("y", 15)
+    .attr("class","title")        
+    .attr("text-anchor", "middle")
+    .text("Best Performers")
+    ;
+}
+
+dsBarChart();
+function updateBarChart(group, colorChosen) {
+  // console.log(group);
+  // console.log(colorChosen);
+  
+    var currentDatasetBarChart = datasetBarChosen(group);
+    // console.log(currentDatasetBarChart);
+    
+    var basics = dsBarChartBasics();
+  
+    var margin = basics.margin,
+      width = basics.width,
+       height = basics.height,
+      colorBar = basics.colorBar,
+      barPadding = basics.barPadding;
+    
+    var   xScale = d3.scale.linear()
+      .domain([0, currentDatasetBarChart.length])
+      .range([0, width]);
+    
+      
+    var yScale = d3.scale.linear()
+        .domain([0, d3.max(currentDatasetBarChart, function(d) { return d.measure; })])
+        .range([height,0]);
+        
+    var svg = d3.select("#barChart svg");
+        
+    var plot = d3.select("#barChartPlot")
+        .datum(currentDatasetBarChart);
+  
+        /* Note that here we only have to select the elements - no more appending! */
+    plot.selectAll("rect")
+        .data(currentDatasetBarChart)
+        .transition()
+        .duration(500)
+        .attr("x", function(d, i) {return xScale(i);})
+        .attr("width", width / currentDatasetBarChart.length - barPadding)   
+        .attr("y", function(d) {return yScale(d.measure);})  
+        .attr("height", function(d) {return height-yScale(d.measure);})
+        .attr("fill", colorChosen);
+    
+    plot.selectAll("text.yAxis") // target the text element(s) which has a yAxis class defined
+      .data(currentDatasetBarChart)
+      .transition()
+      .duration(500)
+       .attr("text-anchor", "middle")
+       .attr("x", function(d, i) {
+          return (i * (width / currentDatasetBarChart.length)) + ((width / currentDatasetBarChart.length - barPadding) / 2);
+       })
+       .attr("y", function(d) {
+          return yScale(d.measure) + 25;
+       })
+       .text(function(d) {
+        return d3.round(100*d.measure, 2);
+       })
+       .attr("class", "yAxis")           
+    ;
+
+    plot.selectAll("text.xAxis")
+      .data(currentDatasetBarChart)
+      .transition()
+      .duration(750)
+      // .append("text")
+      .text(function(d) { return d.category;})
+    ;
+    
+
+    svg.selectAll("text.title") // target the text element(s) which has a title class defined
+      .attr("x", (width + margin.left + margin.right)/2)
+      .attr("y", 15)
+      .attr("class","title")        
+      .attr("text-anchor", "middle")
+      .text(group + "'s Best Performers")
+    ;
+}
+
+
+</script>
+
+<div class="container">
+<p>Techniques</p>
+  <ul style ="font-size:12px">
+    <li> Treemap:<br>
+      I used python and pandas to do the preprocessing. I used a json file since it works nicely with the parent - child structure of a treemap.<br>
+      The data ink ratio is quite high on the treemap but it is inherent to that type of visualization.<br>
+      I think the treemap allows the user to quickly see which sectors are the most important and gives a fair representation of the proportion of a sector (compared to a pie chart).<br>
+      Please note that in order to make the treemap readable I did not display the name of a sector of a company if the size of a rectangle is too small compared the lenght of the name.
+    </li>
+    <li> Barchart:<br>
+      The data are in json like format and include data such as name of a company and returns (numerical values).<br>
+      The barchart allows the user to quickly see which companies are the best performers in a sector.  It is usefull because you can see if there are some disparity in the returns of the 3 best performers.<br>
+      I would say that the lie factor is low if you consider it by sector but then if you try to compare between sector using the dashboard, it can be misleading.<br>
+      The data density is quite high but I also took into account that this is a small visualization included in a dashboard.<br>
+      I decided to use abreviations (or symbols) of the name of company so I can display them below the barchart on the x-axis.
+    </li>
+    <li> Linechart:<br>
+      The data are also stored in a json like format for the linechart, this structure comes in handy when dealing with interactivity between different chart.<br>
+      The linechart gives an indication of the trend of a sector over the past week, for example the information technology has a clear negative trend over the last week whereas the materials sector is increasing.
+      The data ink ratio is really low, I removed the x and y axis so that the dashboard is not too hard to read.
+    </li>
+  </ul>
+<p>Interactivity</p>
+  <ul style ="font-size:12px"> 
+      The treemap in this visualization allows the user to zoom in a given sector.<br>
+      When the user clicks on a sector, the barchart and the linechart on the right side of the dashboard are updated to provide information on this specific sector only. The weekly performance is then updated as well as the top 3 performers.<br>
+      Please note that you can go back to the overall index by clicking on the title on top the treemap.
+  </ul>
+<p>Feedback</p>
+  <ul style ="font-size:12px"> 
+    I tried to follow most of the feedbacks I received, for example I choose to display the text in the treemap only if the size of a rectangle was big enough.<br>  
+    I also used the same color on the barchart and linechart than the sector on the treemap so that it remains coherent.
+  </ul>
+<p>Challenges</p>
+  <ul style ="font-size:12px">
+      The challenge I face was to display the name of a sector or the name of a company only if the rectangle size was big enough.<br>
+      I could also reduce the size of the text but I found it to be inefficient since it was most of the time unreadable.<br>
+      An other challenge I encountered was to display a tooltip on my linechart. I wanted initially to display a tooltip but I did not manage to do so when updating the linechart.
+  </ul>
+
+    </li>
+<p>Conclusions</p>
+  <ul style ="font-size:12px">
+      I think the dashboard is really helpful when it comes to have an overview of the performance of the market in the US over the last week.<br>
+      You are first able to visualize which sector is most important, it is clearly Information Technology with companies such as Apple, Microsoft, Google and so on.<br>
+      Therefore you should care about the performance of this sector and by clicking on it, you can easily see that the performance of this sector was negative over the last week.
+      Interestingly though the performance of the overall market was still positive!
+  </ul>
+
+  <!-- <p>Source code</p>
+  <ul style ="font-size:12px">
+    <li> You can find the source code <a href="https://github.com/burgosf/MSAN622/blob/gh-pages/Homework4/dashboard.html">here</a>. </li>
+  </ul> -->
+
+
+</div>
+
+</body>
+
+</html>
