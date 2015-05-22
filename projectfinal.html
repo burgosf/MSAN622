@@ -105,7 +105,7 @@ svg {
   top:1035px;
   left:950px;
   width: 300px;
-  height: 150px;
+  height: 200px;
   background: #fff;
 }
 .axis path,
@@ -477,9 +477,9 @@ function datasetLineChartChosen(group) {
 
 function dsLineChartBasics() {
 
-  var margin = {top: 40, right: 10, bottom: 15, left: 10},
+  var margin = {top: 30, right: 35, bottom: 20, left: 30},
       width = 300 - margin.left - margin.right,
-      height = 125 - margin.top - margin.bottom
+      height = 175 - margin.top - margin.bottom
       ;
     
     return {
@@ -516,7 +516,7 @@ function dsLineChart() {
       ;
 
   var yScale = d3.scale.linear()
-      .domain([d3.min(firstDatasetLineChart, function(d) { return d.measure; }), d3.max(firstDatasetLineChart, function(d) { return d.measure; })])
+      .domain([d3.min(firstDatasetLineChart, function(d) { return d.measure; }) - 5, d3.max(firstDatasetLineChart, function(d) { return d.measure; }) + 5])
       .range([height, 0])
       ;
 
@@ -562,6 +562,18 @@ function dsLineChart() {
       .append("title")
     ;
 
+  // var yTextPadding = 2 
+  plot.selectAll('.dottext')
+      .data(firstDatasetLineChart)
+      .enter()
+      .append('text')
+      .attr("class", "dottext")
+      .attr("fill", "lightgrey")
+      .classed('label', true)
+      .attr("x", function(d, i) { return xScale(i); })
+      .attr("y", function(d, i) { return yScale(d.measure) + 10; })
+      .text(function(d, i) { return d.measure; });
+
 
   svg.append("text")
     .text("Weekly Performance")
@@ -600,7 +612,7 @@ function updateLineChart(group, colorChosen) {
       ;
 
   var yScale = d3.scale.linear()
-      .domain([d3.min(currentDatasetLineChart, function(d) { return d.measure; }), d3.max(currentDatasetLineChart, function(d) { return d.measure; })])
+      .domain([d3.min(currentDatasetLineChart, function(d) { return d.measure; }) - 5, d3.max(currentDatasetLineChart, function(d) { return d.measure; }) + 5])
       .range([height, 0])
       ;
 
@@ -640,6 +652,19 @@ function updateLineChart(group, colorChosen) {
      .attr("r", 3.5)
     .attr("stroke", colorChosen)
     ;
+
+  plot.selectAll('.dottext')
+      .remove();
+  plot.selectAll('.dottext')
+      .data(currentDatasetLineChart)
+      .enter()
+      .append('text')
+      .attr("class", "dottext")
+      .attr("fill", colorChosen)
+      .classed('label', true)
+      .attr("x", function(d, i) { return xScale(i); })
+      .attr("y", function(d, i) { return yScale(d.measure) + 10; })
+      .text(function(d, i) { return d.measure; });
      
   // svg.append("text")
   //   .text(group + " Weekly Performance")
