@@ -571,7 +571,7 @@ function dsLineChart() {
       .attr("fill", "lightgrey")
       .classed('label', true)
       .attr("x", function(d, i) { return xScale(i); })
-      .attr("y", function(d, i) { return yScale(d.measure) + 10; })
+      .attr("y", function(d, i) { return yScale(d.measure) + 20; })
       .text(function(d, i) { return d.measure; });
 
 
@@ -663,7 +663,7 @@ function updateLineChart(group, colorChosen) {
       .attr("fill", colorChosen)
       .classed('label', true)
       .attr("x", function(d, i) { return xScale(i); })
-      .attr("y", function(d, i) { return yScale(d.measure) + 10; })
+      .attr("y", function(d, i) { return yScale(d.measure) + 20; })
       .text(function(d, i) { return d.measure; });
      
   // svg.append("text")
