@@ -570,7 +570,7 @@ function dsLineChart() {
       .attr("class", "dottext")
       .attr("fill", "lightgrey")
       .classed('label', true)
-      .attr("x", function(d, i) { return xScale(i); })
+      .attr("x", function(d, i) { return xScale(i) - 3; })
       .attr("y", function(d, i) { return yScale(d.measure) + 20; })
       .text(function(d, i) { return d.measure; });
 
@@ -662,7 +662,7 @@ function updateLineChart(group, colorChosen) {
       .attr("class", "dottext")
       .attr("fill", colorChosen)
       .classed('label', true)
-      .attr("x", function(d, i) { return xScale(i); })
+      .attr("x", function(d, i) { return xScale(i) - 3; })
       .attr("y", function(d, i) { return yScale(d.measure) + 20; })
       .text(function(d, i) { return d.measure; });
      
